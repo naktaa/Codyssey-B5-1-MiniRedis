@@ -1,0 +1,20 @@
+# 로컬 비밀값 (.env.example은 공유 가능)
+.env
+.env.*
+!.env.example
+
+# Python 로컬 환경·캐시
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# C 빌드 생성물
+/build/
+*.o
+*.a
+*.dSYM/
+
+# 운영체제 생성물
+.DS_Store
