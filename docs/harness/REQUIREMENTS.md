@@ -1,12 +1,12 @@
 # Requirements
 
-기준은 첨부 원문을 그대로 보존한 [MISSION.md](MISSION.md)입니다. 아래 내용은 완료 기준의 해석이며 원문을 대체하지 않습니다. 현재 모든 기능은 미구현·미검증입니다. 단계 순서는 [README.md](../../README.md), 상태는 [STATUS.md](STATUS.md)에서 관리합니다.
+기준은 첨부 원문을 그대로 보존한 [MISSION.md](MISSION.md)입니다. 아래 내용은 완료 기준의 해석이며 원문을 대체하지 않습니다. C 이중 연결 리스트는 구현·정적 검토 후 사용자 실행 검증 대기이며, Python 최종 기능은 모두 미구현입니다. 단계 순서는 [README.md](../../README.md), 상태는 [STATUS.md](STATUS.md)에서 관리합니다.
 
 ## Required — 원문 필수
 
 | ID | 원문 위치 | 완료 기준 | 상태 |
 | --- | --- | --- | --- |
-| REQ-001 | 4. 기본 자료구조 / 이중 연결 리스트 | prev/next/data 노드, insert_front/insert_back/remove_front/remove_back/remove_node/move_to_front 직접 구현. 모든 삽입·삭제·이동 O(1). 빈/단일/복수 노드 동작과 복잡도를 확인 | 미구현 |
+| REQ-001 | 4. 기본 자료구조 / 이중 연결 리스트 | prev/next/data 노드, insert_front/insert_back/remove_front/remove_back/remove_node/move_to_front 직접 구현. 모든 삽입·삭제·이동 O(1). 빈/단일/복수 노드 동작과 복잡도를 확인 | C 실습: 구현·정적 검토 완료 / 사용자 검증 대기. Python: 미구현 |
 | REQ-002 | 4. 기본 자료구조 / 해시맵 | put/get/remove/contains/keys/size, 직접 설계한 해시 함수, 체이닝 충돌 해결. 로드 팩터 0.75 초과 시 버킷 2배 확장, 충돌·덮어쓰기·삭제·확장 후 항목 보존 확인 | 미구현 |
 | REQ-003 | 4. 기본 자료구조 / 힙 | 최소 힙 push/pop/peek/size 및 _heapify_up/_heapify_down 직접 구현, (expire_at, key) 지원. 최소값 순서와 빈/단일/복수 요소 확인 | 미구현 |
 | REQ-004 | 2·4. String 명령 / 공통·엣지 규칙 | SET/GET/DEL/EXISTS/DBSIZE/KEYS 모두 구현. SET은 OK와 TTL 초기화·LRU 갱신, GET은 성공 시에만 LRU 갱신·값 따옴표 출력/없거나 만료 시 (nil), DEL/EXISTS는 (integer) 1 또는 0, DBSIZE는 개수, KEYS는 전체 목록(패턴·정렬 불필요). 키 명령 전 만료 확인, DEL은 데이터·TTL·LRU 엔트리 함께 제거 | 미구현 |
