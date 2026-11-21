@@ -102,6 +102,34 @@ Review:
 - 남은 구현: 맵/버킷 초기화·전체 메모리 정리, get/remove/contains/keys/size, 로드 팩터 0.75 초과 시 버킷 2배 확장. 오래된 Entry 관련 주석도 실제 Data/LinkedList 구조와 맞춥니다.
 - 기록: [STATUS](STATUS.md)·[README](../../README.md)를 현재 단계·파일명에 맞췄습니다. 정적 확인만 수행했고 소스 수정·컴파일·실행·테스트·Git 쓰기는 하지 않았습니다. Review Decision: **SKIP** — 중간 기록 요청. 커밋 보류 — put의 실패 경로·count 보완 후 관련 변경을 묶는 것을 권장합니다.
 
+## 2026-11-21
+
+### C-2 해시맵 완료
+
+- 사용자 구현: put 실패 경로 정리·count 갱신·capacity 기반 버킷 계산·로드 팩터 0.75 초과 시 2배 확장, get/remove/contains/keys/size.
+- Claude 구현(사용자 요청): 탐색 공통 헬퍼 `hashmap_find_node`로 put/get/remove/contains 리팩토링, 확인용 `main`.
+- 사용자 확인: 루트에서 `-fsanitize=address,undefined` 빌드 후 `./build/hashmap` 실행. 모든 항목이 기대값과 일치하고 sanitizer 오류 없음.
+
+### C-3 최소 힙 설계 결정
+
+- Decision:
+  1. 파일은 [MinHeap.h](../../c-practice/MinHeap.h)·[MinHeap.c](../../c-practice/MinHeap.c). LinkedList와 같은 이름 규칙이며 구조체 정의는 헤더에 둔다.
+  2. `expire_at`은 밀리초 단위 `long long`. C-3 테스트에서는 실제 시간 없이 숫자만 넣는다.
+  3. key는 힙이 `strlen + 1`로 `malloc`해 복사·소유한다. `minheap_free`는 남은 항목의 key를 해제한다.
+  4. 배열은 동적 확장하며 가득 차면 2배. `realloc` 결과는 임시 포인터로 받아 실패 시 원본을 보존한다.
+  5. pop/peek은 `hashmap_get`과 같은 패턴(out 매개변수, 성공 1 / 빈 힙 0). 인덱스는 `size_t`, `_heapify_up`은 `while (i > 0)` 조건.
+  6. pop의 key 소유권: `out_item->key`를 호출한 쪽으로 넘기고 힙은 해제하지 않는다. 호출한 쪽이 다 쓴 뒤 `free`한다. peek의 key는 빌린 주소이며 그 항목이 pop되기 전까지만 유효하다.
+- Reason:
+  - 초 단위로 저장하면 EXPIRE 호출 시점에 따라 최대 1초 오차가 생긴다.
+  - C-4에서 lazy deletion을 쓰면 힙 항목이 해시맵 항목보다 오래 남으므로, 해시맵 key 주소를 빌리면 해제된 주소가 남는다. 그래서 최종 설계도 복사로 간다.
+  - pop이 key를 해제하면 out 매개변수로 넘긴 key가 곧바로 해제된 주소가 된다(3·5번 충돌). 소유권을 넘기면 C-4에서 pop 한 번으로 해시맵 확인 후 해제할 수 있다.
+- Alternative / Why not:
+  - 초 단위 `long`: 1초 오차.
+  - 해시맵 key 주소 공유: lazy deletion과 함께 쓰면 해제 후 사용 위험.
+  - peek으로 확인 후 pop이 key 해제: 호출할 때마다 peek → pop 두 번이 필요하다.
+- C-4 메모(C-3에서는 구현하지 않음): lazy deletion. EXPIRE 재호출·SET 덮어쓰기·DEL 때 힙의 옛 항목은 지우지 않고 남긴다. pop 시 해시맵에 key가 없거나 해시맵의 `expire_at`과 다르면 버린다. 이를 위해 C-4에서 해시맵 `Data`에 `expire_at` 필드가 추가된다.
+- 반영: 사용자 요청에 따라 Claude가 구조체·함수 원형·역할 주석·TODO만 작성했다. 함수 본문·테스트 코드는 없다. `_heapify_up/_heapify_down`은 `MinHeap.c`의 `static` 원형이다.
+
 <!-- 기록 형식
 ## YYYY-MM-DD
 

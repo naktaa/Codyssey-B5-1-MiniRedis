@@ -1,6 +1,6 @@
 # Mini Redis
 
-자료구조를 직접 구현하며 Redis의 LRU·TTL·메모리 제한 동작을 배우는 CLI 프로젝트입니다. C 실습을 먼저 진행하고, 직접 만든 알고리즘을 Python으로 포팅해 최종 프로그램을 완성합니다. 현재 C 이중 연결 리스트의 여섯 연산을 사용자가 구현했고, 정적 검토 후 사용자 실행 검증을 기다리고 있습니다. Python 최종 구현은 시작하지 않았습니다.
+자료구조를 직접 구현하며 Redis의 LRU·TTL·메모리 제한 동작을 배우는 CLI 프로젝트입니다. C 실습을 먼저 진행하고, 직접 만든 알고리즘을 Python으로 포팅해 최종 프로그램을 완성합니다. 현재 C 이중 연결 리스트와 체이닝 해시맵을 완료했고, C 최소 힙을 구현하는 단계입니다. Python 최종 구현은 시작하지 않았습니다.
 
 원문은 [MISSION.md](docs/harness/MISSION.md), 필수·보너스 완료 기준은 [REQUIREMENTS.md](docs/harness/REQUIREMENTS.md), 현재 단계는 [STATUS.md](docs/harness/STATUS.md)에 있습니다. [AGENTS.md](AGENTS.md)에 따라 사용자가 설계·구현·테스트·디버깅하고 PM은 같은 세션에서 질문과 학습을 돕습니다. 자동 위임·자동 리뷰·별도 평가는 하지 않습니다.
 
@@ -12,7 +12,7 @@
 ├── README.md
 ├── .editorconfig
 ├── .gitignore
-├── c-practice/          # LinkedList.h/.c, HashMap.c 실습
+├── c-practice/          # LinkedList.h/.c, HashMap.c, MinHeap.h/.c 실습
 ├── python/             # Python 최종 Mini Redis (현재 .gitkeep만 존재)
 ├── tests/              # 사용자 작성 테스트 (현재 .gitkeep만 존재)
 └── docs/harness/        # 기존 지침·원문·요구사항·상태·이력·템플릿
@@ -21,7 +21,7 @@
 - 최종 환경: Python 3.8 이상. C 실습에는 C 컴파일러가 필요하며 C++는 사용하지 않습니다.
 - 각 자료구조는 사용자가 독립 모듈/파일로 분리합니다. 세부 파일명·C 표준·빌드 명령·테스트 방식은 아직 결정하지 않았습니다.
 - 외부 dependency·패키징·CI·자동 실행 설정은 추가하지 않았습니다. 컴파일·프로그램 실행·테스트·도구 설치는 수행하지 않았습니다.
-- 생성물은 루트 `build/`에 두는 기본 정리 방식을 설정했습니다. C 실습은 [LinkedList.h](c-practice/LinkedList.h)·[LinkedList.c](c-practice/LinkedList.c)·[HashMap.c](c-practice/HashMap.c)에 있으며 실행·테스트 결과는 아직 확인하지 않았습니다.
+- 생성물은 루트 `build/`에 두는 기본 정리 방식을 설정했습니다. C 실습은 [LinkedList.h](c-practice/LinkedList.h)·[LinkedList.c](c-practice/LinkedList.c)·[HashMap.c](c-practice/HashMap.c)·[MinHeap.h](c-practice/MinHeap.h)·[MinHeap.c](c-practice/MinHeap.c)에 있습니다. 해시맵은 레포 루트에서 `gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/HashMap.c c-practice/LinkedList.c`로 빌드합니다.
 
 ## 단계별 학습 계획
 
@@ -30,8 +30,8 @@
 | 단계 | 위치 | 목표·완료 기준 | 상태 |
 | --- | --- | --- | --- |
 | C-1 | [c-practice](c-practice/) | 이중 연결 리스트: 원문의 6개 연산, 삽입/삭제/이동 O(1), 빈/단일/복수 노드에서 연결·수명·해제를 사용자 테스트로 확인·설명 | 구현·정적 검토 완료 / 사용자 검증 대기 |
-| C-2 | [HashMap.c](c-practice/HashMap.c) | 직접 해시 함수와 체이닝 해시맵: 원문의 6개 연산, 충돌 처리, 로드 팩터 0.75 초과 시 버킷 2배 확장 후 기존 항목 보존 확인·설명 | 헤더·범용 리스트 재사용 반영 / put 실패 경로·count·버킷 계산 보완 중 |
-| C-3 | [c-practice](c-practice/) | 최소 힙: push/pop/peek/size와 상·하향 정렬, 만료 시간·키 요소 지원 및 최소값 순서 확인·설명 | 대기 |
+| C-2 | [HashMap.c](c-practice/HashMap.c) | 직접 해시 함수와 체이닝 해시맵: 원문의 6개 연산, 충돌 처리, 로드 팩터 0.75 초과 시 버킷 2배 확장 후 기존 항목 보존 확인·설명 | 완료 (사용자 실행 확인) |
+| C-3 | [MinHeap.h](c-practice/MinHeap.h)·[MinHeap.c](c-practice/MinHeap.c) | 최소 힙: push/pop/peek/size와 상·하향 정렬, 만료 시간·키 요소 지원 및 최소값 순서 확인·설명 | 설계 결정·선언 템플릿 준비 / 구현 대기 |
 | C-4 | [c-practice](c-practice/) | 기존 자료구조에 LRU·TTL·메모리 제한 결합: 갱신·삭제·만료·제거 시 일관성, 사용량·제거 횟수와 메모리 해제 확인·설명. C 전체 CLI는 요구하지 않음 | 대기 |
 | PY-1 | [python](python/) | 직접 만든 연결 리스트·체이닝 해시맵·최소 힙을 독립 모듈로 포팅하고 기존 성질·연산·제약을 사용자 테스트로 확인 | 대기 |
 | PY-2 | [python](python/) | String 6개·메모리 2개·TTL 2개 명령을 LRU/TTL/메모리 관리와 결합해 REQ-004~007 동작 확인 | 대기 |
@@ -47,4 +47,4 @@
 - 시간 측정·남은 초의 표현, DBSIZE/KEYS 등 전체 조회 시 만료 정리 범위, 메모리 제한 변경 시 초과분 처리 시점과 OOM 시 기존 값 보존 정책. 원문에 명시된 동작을 우선하고 미명시 사항은 결정 근거를 남깁니다.
 - Python 배열 수준 저장소의 허용 범위와 값 파싱 방식(원문의 최소 기준 중 선택). 핵심 자료구조를 dict/set/collections/heapq로 대체하지 않습니다.
 
-C-2는 [LinkedList.h](c-practice/LinkedList.h)·[LinkedList.c](c-practice/LinkedList.c)의 범용 리스트를 재사용합니다. 사용자는 해시 함수와 put의 기본 흐름·문자열 공간 할당을 작성했고, 다음은 실패 경로의 메모리 정리·count 증가·실제 capacity 기반 버킷 계산 보완입니다. C-1 실행 검증과 C-2 구현 완료는 아직 확인되지 않았습니다. 남은 작업은 [STATUS](docs/harness/STATUS.md)에 기록합니다.
+C-2는 [LinkedList.h](c-practice/LinkedList.h)·[LinkedList.c](c-practice/LinkedList.c)의 범용 리스트를 재사용해 완료했습니다. C-3 최소 힙은 밀리초 `long long` 만료 시각, 힙이 복사해 소유하는 key, 2배 동적 확장으로 설계했으며 결정 근거는 [WORKLOG](docs/harness/WORKLOG.md)에 있습니다. 남은 작업은 [STATUS](docs/harness/STATUS.md)에 기록합니다.
