@@ -1,16 +1,16 @@
 #ifndef LINKEDLIST_H
 #define LINKEDLIST_H
 
-typedef struct node Node;
-typedef struct linkedlist LinkedList;
+typedef struct Node Node;
+typedef struct LinkedList LinkedList;
 
-struct node {
+struct Node {
     void* data;
     Node* prev;
     Node* next;
 };
 
-struct linkedlist {
+struct LinkedList {
     Node* HEAD;
     Node* TAIL;
 };

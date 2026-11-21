@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "LinkedList.h"
 
 #define CAP 100
@@ -37,7 +38,7 @@ size_t hashmap_hash(const char* key) {
         sum = sum * 31 + ch;
     }
 
-    return sum % CAP;
+    return sum;
 };
 
 /*
@@ -47,7 +48,7 @@ size_t hashmap_hash(const char* key) {
  * TODO: 로드 팩터 0.75 초과 시 버킷 2배 확장과 항목 재배치를 구현하기.
  */
 int hashmap_put(HashMap* map, const char* key, int value) {
-    size_t idx = hashmap_hash(key);
+    size_t idx = hashmap_hash(key) % map->capacity;
     LinkedList* list = &map->buckets[idx];
     Node* now = list->HEAD;
 
@@ -70,6 +71,7 @@ int hashmap_put(HashMap* map, const char* key, int value) {
 
     NewData->key = malloc(strlen(key) + 1);
     if (NewData->key == NULL) {
+        free(NewData);
         return 0;
     }
 
@@ -77,10 +79,47 @@ int hashmap_put(HashMap* map, const char* key, int value) {
     NewData->value = value;
 
     Node* NewNode = malloc(sizeof(Node));
+    if (NewNode == NULL) {
+        free(NewData->key);
+        free(NewData);
+        return 0;
+    }
+
     NewNode->data = NewData;
     NewNode->prev = now;
     NewNode->next = NULL;
     insert_back(list, NewNode);
+    map->count++;
+
+    // 버킷 2배 확장
+    if (map->count * 4 > map->capacity * 3) {
+        LinkedList* new_bucktes = calloc(map->capacity * 2, sizeof(LinkedList));
+        if (new_bucktes == NULL) {
+            return 1;
+        }
+
+        size_t new_capacity = map->capacity * 2;
+
+        for (size_t i = 0; i < map->capacity; i++) {
+            LinkedList* prev_list = &map->buckets[i];
+            now = prev_list->HEAD;
+
+            while (now) {
+                Data* data = now->data;
+                idx = hashmap_hash(data->key) % new_capacity;
+                LinkedList* nextList = &new_bucktes[idx];
+                Node* now_temp = now->next;
+                insert_back(nextList, now);
+                now = now_temp;
+            }
+        }
+
+        LinkedList* temp_buckets = map->buckets;
+        map->buckets = new_bucktes;
+        free(temp_buckets);
+        map->capacity = new_capacity;
+    }
+
     return 1;
 };
 
