@@ -39,7 +39,30 @@ size_t hashmap_hash(const char* key) {
     }
 
     return sum;
-};
+}
+
+/*
+ * key가 들어 있는 노드를 찾는다. 없으면 NULL.
+ * out_list가 NULL이 아니면 key가 속한 버킷 리스트의 주소를 담아준다
+ * (put의 삽입, remove의 삭제에 필요).
+ */
+static Node* hashmap_find_node(const HashMap* map, const char* key, LinkedList** out_list) {
+    size_t idx = hashmap_hash(key) % map->capacity;
+    LinkedList* list = &map->buckets[idx];
+
+    // 못 찾아도 put이 이 리스트에 넣어야 하므로 탐색 전에 먼저 채운다.
+    if (out_list) {
+        *out_list = list;
+    }
+
+    for (Node* now = list->HEAD; now; now = now->next) {
+        Data* data = now->data;
+        if (strcmp(data->key, key) == 0) {
+            return now;
+        }
+    }
+    return NULL;
+}
 
 /*
  * 키가 있으면 값을 갱신하고, 없으면 새 항목을 저장한다.
@@ -48,20 +71,14 @@ size_t hashmap_hash(const char* key) {
  * TODO: 로드 팩터 0.75 초과 시 버킷 2배 확장과 항목 재배치를 구현하기.
  */
 int hashmap_put(HashMap* map, const char* key, int value) {
-    size_t idx = hashmap_hash(key) % map->capacity;
-    LinkedList* list = &map->buckets[idx];
-    Node* now = list->HEAD;
+    LinkedList* list;
+    Node* found = hashmap_find_node(map, key, &list);
 
-    while (now) {
-        Data* data = now->data;
-        if (strcmp(data->key, key)) {
-            now = now->next;
-            continue;
-        }
-        else {
-            data->value = value;
-            return 1;
-        }
+    // 이미 있는 키: 값만 바꾸고 count는 그대로 둔다.
+    if (found) {
+        Data* data = found->data;
+        data->value = value;
+        return 1;
     }
 
     Data* NewData = malloc(sizeof(Data));
@@ -86,15 +103,14 @@ int hashmap_put(HashMap* map, const char* key, int value) {
     }
 
     NewNode->data = NewData;
-    NewNode->prev = now;
-    NewNode->next = NULL;
+    // prev/next는 insert_back이 설정한다. list는 find_node가 채워 준 버킷이다.
     insert_back(list, NewNode);
     map->count++;
 
     // 버킷 2배 확장
     if (map->count * 4 > map->capacity * 3) {
-        LinkedList* new_bucktes = calloc(map->capacity * 2, sizeof(LinkedList));
-        if (new_bucktes == NULL) {
+        LinkedList* new_buckets = calloc(map->capacity * 2, sizeof(LinkedList));
+        if (new_buckets == NULL) {
             return 1;
         }
 
@@ -102,12 +118,12 @@ int hashmap_put(HashMap* map, const char* key, int value) {
 
         for (size_t i = 0; i < map->capacity; i++) {
             LinkedList* prev_list = &map->buckets[i];
-            now = prev_list->HEAD;
+            Node* now = prev_list->HEAD;
 
             while (now) {
                 Data* data = now->data;
-                idx = hashmap_hash(data->key) % new_capacity;
-                LinkedList* nextList = &new_bucktes[idx];
+                size_t idx = hashmap_hash(data->key) % new_capacity;
+                LinkedList* nextList = &new_buckets[idx];
                 Node* now_temp = now->next;
                 insert_back(nextList, now);
                 now = now_temp;
@@ -115,13 +131,13 @@ int hashmap_put(HashMap* map, const char* key, int value) {
         }
 
         LinkedList* temp_buckets = map->buckets;
-        map->buckets = new_bucktes;
+        map->buckets = new_buckets;
         free(temp_buckets);
         map->capacity = new_capacity;
     }
 
     return 1;
-};
+}
 
 /*
  * 반환: 키를 찾으면 1, 없으면 0. 찾은 정수 값은 *out_value에 전달한다.
@@ -130,20 +146,48 @@ int hashmap_put(HashMap* map, const char* key, int value) {
  * TODO: 같은 버킷의 후보들을 실제 키 내용으로 구별하기.
  * 참고: 문자열의 ==는 주소 비교이고, strcmp는 문자열 내용 비교다.
  */
-int hashmap_get(const HashMap* map, const char* key, int* out_value);
+int hashmap_get(const HashMap* map, const char* key, int* out_value) {
+    // 리스트는 필요 없으므로 NULL을 넘긴다.
+    Node* found = hashmap_find_node(map, key, NULL);
+    if (found == NULL) {
+        return 0;
+    }
+
+    Data* data = found->data;
+    *out_value = data->value;
+    return 1;
+}
 
 /*
  * 반환: 삭제했으면 1, 해당 키가 없으면 0.
  * TODO: 체인 연결, 버킷의 시작 주소, count, 메모리 수명을 함께 관리하기.
  * stdio.h의 remove와 충돌하지 않도록 hashmap_remove라는 이름을 쓴다.
  */
-int hashmap_remove(HashMap* map, const char* key);
+int hashmap_remove(HashMap* map, const char* key) {
+    LinkedList* list;
+    Node* found = hashmap_find_node(map, key, &list);
+    if (found == NULL) {
+        return 0;
+    }
+
+    // remove_node가 노드를 해제하므로 Data 주소를 먼저 꺼내 둔다.
+    Data* data = found->data;
+    remove_node(list, found);
+    free(data->key);
+    free(data);
+    map->count--;
+
+    return 1;
+}
 
 /*
  * 반환: 키가 있으면 1, 없으면 0.
  * TODO: 조회와 중복되는 부분을 어떻게 사용할지 생각하기.
  */
-int hashmap_contains(const HashMap* map, const char* key);
+int hashmap_contains(const HashMap* map, const char* key) {
+    // get을 부르지 않는다: 나중에 get에만 LRU 갱신이 붙기 때문이다.
+    return hashmap_find_node(map, key, NULL) != NULL;
+}
 
 /*
  * C 실습에서는 저장된 모든 키를 출력하는 형태로 시작한다. 순서는 무관하다.
