@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 #include "LinkedList.h"
 
 void insert_front(LinkedList* list, Node* now) {
