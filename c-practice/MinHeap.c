@@ -22,7 +22,17 @@
  * TODO: while (i > 0) 동안 부모보다 expire_at이 작으면 자리를 바꾸고 i를 부모로 옮기기.
  *       부모 이하가 되면 멈춘다. i는 size_t이므로 0에서 빼지 않도록 조건을 먼저 본다.
  */
-static void _heapify_up(MinHeap* heap, size_t i);
+static void _heapify_up(MinHeap* heap, size_t i) {
+    while (i > 0) {
+        long long ex_time = heap->items[i].expire_at;
+        if (ex_time >= heap->items[(i - 1) / 2].expire_at) break;
+
+        HeapItem swap_item = heap->items[i];
+        heap->items[i] = heap->items[(i - 1) / 2];
+        heap->items[(i - 1) / 2] = swap_item;
+        i = (i - 1) / 2;
+    }
+}
 
 /*
  * i번 항목을 더 작은 자식과 비교하며 아래로 내린다. pop에서 마지막 항목을 0번으로 옮긴 뒤 호출한다.
@@ -56,7 +66,7 @@ int minheap_init(MinHeap* heap, size_t capacity) {
  */
 void minheap_free(MinHeap* heap) {
     for (size_t i = 0; i < heap->size; i++) {
-        free((heap->items + i)->key);
+        free(heap->items[i].key);
     }
     free(heap->items);
 }
@@ -67,7 +77,29 @@ void minheap_free(MinHeap* heap) {
  * TODO: 가득 차면 realloc으로 2배 확장하기. 결과는 임시 포인터로 받아 실패 시 원본을 보존한다.
  * TODO: key 복사본을 만들고 배열 끝에 둔 뒤 _heapify_up으로 제자리를 찾기.
  */
-int minheap_push(MinHeap* heap, long long expire_at, const char* key);
+int minheap_push(MinHeap* heap, long long expire_at, const char* key) {
+    if (heap->capacity == heap->size) {
+        HeapItem* tmp_items = realloc(heap->items, sizeof(HeapItem) * heap->capacity * 2);
+        if (tmp_items == NULL) {
+            return 0;
+        }
+        heap->items = tmp_items;
+        heap->capacity *= 2;
+    }
+
+    char* new_key = malloc(strlen(key) + 1);
+    if (new_key == NULL) {
+        return 0;
+    }
+    strcpy(new_key, key);
+    heap->items[heap->size].expire_at = expire_at;
+    heap->items[heap->size].key = new_key;
+
+    _heapify_up(heap, heap->size);
+    (heap->size)++;
+
+    return 1;
+}
 
 /*
  * expire_at이 가장 작은 항목을 꺼내 *out_item에 전달한다.
