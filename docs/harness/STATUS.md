@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-21: C-2 해시맵 완료(사용자 실행 확인). C-3 최소 힙 설계를 결정했고 [MinHeap.h](../../c-practice/MinHeap.h)·[MinHeap.c](../../c-practice/MinHeap.c)에 구조체·원형·TODO를 준비했습니다. 함수 본문은 사용자가 구현합니다.
+2026-11-22: C-3 최소 힙 완료(사용자 sanitizer 실행 확인). C-4 LRU·TTL·메모리 제한 시작.
 
 ## Completed
 
@@ -16,14 +16,15 @@
 - 이후 사용자 구현: [LinkedList.h](../../c-practice/LinkedList.h)로 선언 분리, Node의 void* data·리스트별 HEAD/TAIL 도입, HashMap의 LinkedList* buckets·키/값 Data 분리. 해시 함수의 바이트 변환·31배 누적, put의 순회·동일 키 갱신·신규 Data/키/Node 생성·insert_back 호출을 작성했습니다(실행 미검증).
 - 2026-11-21 C-2 완료: 해시맵 6개 연산·로드 팩터 0.75 초과 시 2배 확장 구현. 사용자가 sanitizer 빌드로 확인용 main을 실행해 모든 기대값 일치를 확인했습니다.
 - 2026-11-21 C-3 준비: 설계 6개 항목 결정, MinHeap.h/.c에 구조체·원형·역할 주석·TODO 작성(본문·테스트 없음).
+- 2026-11-22 C-3 완료: 사용자가 MinHeap 6개 연산(_heapify_up/down 포함)을 구현. Claude 작성 확인용 main([build/tmp/minheap_test.c](../../build/tmp/minheap_test.c), 미추적)을 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인. macOS에서 누수 검사는 미확인.
 
 ## In Progress
 
-C-3 최소 힙: 설계 결정·선언 템플릿 준비 완료, 함수 본문 구현 대기. 결정 근거는 [WORKLOG](WORKLOG.md)의 "C-3 최소 힙 설계 결정"에 있습니다.
+C-4: 해시맵·리스트·힙 조합 설계(먼저 LRU를 위한 해시맵 Data ↔ 리스트 Node 연결 방식 결정).
 
 ## Next
 
-사용자가 [MinHeap.c](../../c-practice/MinHeap.c)에 init/free → _heapify_up/push → peek/size → _heapify_down/pop 순서로 구현합니다. 이후 Claude가 확인용 main(무작위 push 후 전부 pop해 오름차순 확인)을 작성하고 사용자가 실행합니다.
+LRU 연결 설계 → LRU 갱신·메모리 초과 시 꼬리 제거 → expire_at 추가와 lazy 만료. 핵심 흐름은 사용자가 직접, CLI 파싱·출력·테스트는 Claude가 제안 후 작성.
 
 ## Open Issues
 
@@ -38,7 +39,7 @@ C-3 최소 힙: 설계 결정·선언 템플릿 준비 완료, 함수 본문 구
 
 ## Current Task
 
-- 현재 단계: C-3 최소 힙 구현 대기(설계·선언 템플릿 준비 완료). 별도 TASK 파일 없이 [학습 계획](../../README.md)의 단계 ID를 사용합니다. 아래 항목은 C-2 진행 당시 기록입니다.
+- 현재 단계: C-4 시작(C-3 완료). 별도 TASK 파일 없이 [학습 계획](../../README.md)의 단계 ID를 사용합니다. 아래 항목은 C-2 진행 당시 기록입니다.
 - 이번 승인: 문자열 키·정수 값, 항목/관리 구조체, 해시/필수 여섯 연산의 원형·역할 설명·TODO 제공 계획에 사용자가 '그럼 한번 해줘'라고 승인했습니다. 기존 HashMap.c를 사용하며 별도 파일·함수 본문·정답 알고리즘·테스트 코드는 생성하지 않습니다. 자동 구현 위임·실행·Git 쓰기 승인으로 확대하지 않습니다.
 - 후속 선택: 기존 연결 리스트를 가져다 쓰는 재사용 방향으로 진행합니다. 이는 설계 방향 선택이며 에이전트의 소스 리팩터링·새 헤더 생성·기존 함수 수정 계획 승인은 아닙니다. 사용자가 직접 설계·구현합니다.
 - 후속 설계 요청: 사용자가 범용 데이터 표현을 정해달라고 요청해 void* data와 Node/실제 데이터의 소유권 분리를 선택했습니다. callback·매크로 기반 타입 생성 없이 진행하며 에이전트 소스 수정 승인은 아닙니다. 근거는 [WORKLOG](WORKLOG.md)의 C-2 범용 데이터 표현 결정에 기록했습니다.
