@@ -54,6 +54,7 @@ static Node* hashmap_find_node(const HashMap* map, const char* key, LinkedList**
  * 반환: 성공 1, 할당 등 저장 실패 0. 기존 키 갱신 시 count는 늘지 않는다.
  * TODO: 키 문자열의 보관 방식, 충돌 처리, 새 항목 연결을 구현하기.
  * TODO: 로드 팩터 0.75 초과 시 버킷 2배 확장과 항목 재배치를 구현하기.
+ * TODO(C-4): 새 Data를 calloc으로 할당해 lru_node = NULL, expire_at = 0(NO_EXPIRE)으로 시작하게 하기.
  */
 int hashmap_put(HashMap* map, const char* key, int value) {
     LinkedList* list;

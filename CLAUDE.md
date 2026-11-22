@@ -59,10 +59,13 @@
 
 ```bash
 mkdir -p build
-gcc -Wall -Wextra -g -o build/hashmap c-practice/HashMap.c c-practice/LinkedList.c
-# 메모리 오류 확인
-gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/HashMap.c c-practice/LinkedList.c
-./build/hashmap
+# 메모리 오류 확인(sanitizer)
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/hashmap_test.c c-practice/HashMap.c c-practice/LinkedList.c
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
+./build/store
+# 누수 확인: macOS는 LeakSanitizer 미지원이라 sanitizer 없이 빌드해 leaks로 확인
+gcc -Wall -Wextra -g -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
+leaks --atExit -- ./build/store
 ```
 
 - Claude는 확인용으로 컴파일·실행할 수 있습니다. 임시 테스트 파일은 `build/tmp/`에만 둡니다.
@@ -72,7 +75,8 @@ gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/Ha
 
 - 사용자가 "기록해줘"라고 하면 `STATUS.md`에 **완료한 구현만** 짧게 기록합니다. 사용자가 이 기록을 코드 변경과 한 커밋으로 묶으므로, 별도 `Docs:` 커밋을 추천하지 않습니다.
 - 다음 단계 계획(In Progress/Next의 새 내용)은 사용자가 커밋한 뒤 다음 단계를 시작할 때 따로 씁니다. 커밋 전에는 다음 단계 설계·템플릿을 시작하지 않습니다.
-- 스테이징·커밋·push는 사용자가 직접 합니다. 커밋할 만한 시점에 메시지만 한 줄 추천하고(`Feat:` / `Fix:` / `Docs:`), git 명령어는 쓰지 않습니다.
+- 스테이징·커밋·push는 기본적으로 사용자가 직접 합니다. 커밋할 만한 시점에 메시지만 한 줄 추천하고(`Feat:` / `Fix:` / `Docs:`), git 명령어는 쓰지 않습니다.
+- 사용자가 그 요청에서 커밋·push를 직접 하라고 하면 Claude가 해도 됩니다. 그 요청의 변경에 한하고, 다른 때로 확대하지 않습니다.
 
 ## 말투
 

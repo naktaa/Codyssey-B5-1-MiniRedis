@@ -19,6 +19,9 @@
  * 아래 원형의 ;를 지우고 { } 본문을 직접 작성한다.
  *
  * 메모리 제한 구현 순서 권장: entry_size → delete_data(+store_del 정리) → evict_if_needed → store_set
+ *
+ * TTL 구현 순서 권장: 기존 함수에 now 인자 추가 → expire_if_needed → store_expire → store_ttl
+ *                   → set/get/del/free의 TTL TODO
  */
 
 /*
@@ -58,6 +61,15 @@ static void evict_if_needed(Store* store) {
 }
 
 /*
+ * now 시점에 만료된 키를 힙에서 꺼내 지운다. 모든 Store 명령의 맨 앞에서 호출한다.
+ * 최소 힙이라 맨 위가 가장 빠른 만료다. 맨 위가 아직 안 지났으면 나머지도 안 지났으므로 거기서 멈춘다.
+ * TODO: 만료된 힙 항목을 꺼내, 해시맵의 현재 상태와 맞는 진짜 만료일 때만 지우기.
+ *       오래된 항목(이미 지워졌거나 만료 시각이 바뀐 키)은 버린다. 꺼낸 key의 해제 책임도 지키기.
+ *       만료로 지운 키는 evicted_keys에 세지 않는다.
+ */
+static void expire_if_needed(Store* store, long long now);
+
+/*
  * 키를 저장하거나 갱신하고, 그 키를 LRU 맨 앞으로 둔다.
  * TODO(1): put 전에 hashmap_get_data로 기존 키인지 확인해 두기.
  * TODO(2): hashmap_put. 실패하면 0.
@@ -68,8 +80,11 @@ static void evict_if_needed(Store* store) {
  *   - 키 하나만으로 maxmemory를 넘는 경우를 거부하기(덮어쓰기면 기존 값 유지).
  *   - 새 키와 기존 키 갱신 각각에 맞게 used_memory 갱신하기.
  *   - 저장 후 메모리 제한을 넘으면 LRU로 제거하기. 반환값은 Store.h의 매크로로.
+ * TTL TODO:
+ *   - 명령 전에 만료 정리하기.
+ *   - 새 키든 덮어쓰기든 저장된 키의 TTL은 없음 상태가 되게 하기.
  */
-int store_set(Store* store, const char* key, int value) {
+int store_set(Store* store, const char* key, int value, long long now) {
     size_t new_memory = entry_size(key, value);
 
     // 단일 엔트리가 maxmemory 초과하면 OOM
@@ -112,8 +127,9 @@ int store_set(Store* store, const char* key, int value) {
  * 키가 있으면 값을 전달하고 LRU 맨 앞으로 옮긴다.
  * TODO: hashmap_get_data로 찾고, 없으면 0. 있으면 move_to_front 후 값을 전달하기.
  *       (C-4 다음 단계에서 "만료 확인 후에만 갱신" 규칙이 여기에 붙는다)
+ * TTL TODO: 명령 전에 만료 정리하기(만료된 키는 없는 키가 되어 LRU도 갱신되지 않는다).
  */
-int store_get(Store* store, const char* key, int* out_value) {
+int store_get(Store* store, const char* key, int* out_value, long long now) {
     Data* data = hashmap_get_data(&store->map, key);
     if (data == NULL) return 0;
 
@@ -129,8 +145,9 @@ int store_get(Store* store, const char* key, int* out_value) {
  *       ① hashmap_get_data로 Data 얻기 ② remove_node로 LRU 노드 제거
  *       ③ hashmap_remove로 버킷 노드·key·Data 해제.
  * 메모리 제한 TODO: ②③을 delete_data(store, data) 호출로 바꾸기(used_memory 감소도 거기서 한다).
+ * TTL TODO: 명령 전에 만료 정리하기. 힙의 항목은 그대로 두어도 된다(lazy deletion).
  */
-int store_del(Store* store, const char* key) {
+int store_del(Store* store, const char* key, long long now) {
     HashMap* map = &store->map;
 
     Data* data = hashmap_get_data(map, key);
@@ -142,8 +159,25 @@ int store_del(Store* store, const char* key) {
 }
 
 /*
+ * EXPIRE key seconds. 키에 만료 시각을 설정한다.
+ * TODO: 명령 전에 만료 정리하기. 없는 키는 0.
+ *       seconds가 0 이하면 즉시 만료(삭제)하고 1.
+ *       그 외에는 만료 시각을 기록하고 힙에도 넣은 뒤 1.
+ *       힙 추가가 실패하면 만료 시각을 바꾸지 않고 STORE_ERR_ALLOC(음수로 바꾼 뒤의 값) 반환.
+ */
+int store_expire(Store* store, const char* key, long long seconds, long long now);
+
+/*
+ * TTL key. 남은 초를 *out_ttl에 전달한다. 반환은 성공 0 이상 / 에러 음수.
+ * TODO: 명령 전에 만료 정리하기. 없는 키 -2, 만료 없음 -1, 그 외 남은 시간을 초 단위로 내림.
+ *       -2·-1도 Redis 응답 값이므로 반환값이 아니라 *out_ttl로 전달한다.
+ */
+int store_ttl(Store* store, const char* key, long long now, long long* out_ttl);
+
+/*
  * Store가 가진 모든 메모리를 해제한다.
  * TODO: LRU 노드만 해제(data가 가리키는 Data는 건드리지 않음)한 뒤 hashmap_free 호출하기.
+ * TTL TODO: 힙이 가진 메모리도 해제하기.
  */
 void store_free(Store* store) {
     Node* now = store->lru.HEAD;

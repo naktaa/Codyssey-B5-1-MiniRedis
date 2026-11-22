@@ -9,6 +9,7 @@ typedef struct Data {
     char* key; // 문자열 주소. 복사·할당·해제 책임은 구현 전에 정한다.
     int value;
     Node* lru_node; // Store의 LRU 리스트에서 이 키를 담은 노드. 해시맵은 읽거나 해제하지 않는다.
+    long long expire_at; // 만료 시각(ms). Store가 관리하며 Store.h의 NO_EXPIRE면 만료 없음. 해시맵은 읽지 않는다.
 } Data;
 
 typedef struct HashMap {

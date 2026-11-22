@@ -22,7 +22,7 @@
 
 ## In Progress
 
-없음(C-4 3단계 TTL 시작 전).
+C-4 3단계 TTL: 설계 결정(WORKLOG "C-4 TTL 설계 결정")·템플릿 준비 완료, 본문 구현 대기.
 
 ## Next
 
@@ -32,7 +32,6 @@ expire_at 추가와 힙 기반 lazy 만료. 핵심 흐름은 사용자가 직접
 
 - C-1 연결 리스트 6개 중 remove_front·remove_back 단독 호출은 미확인(remove_node 경유로만 실행). move_to_front의 디버그 출력은 사용자가 제거.
 - HashMap.h의 HashMap 구조체 주석에 예전 Entry** 설명이 남아 있습니다(현재 구조는 LinkedList* buckets).
-- CLAUDE.md 빌드 명령이 HashMap.c 단독 기준이라 hashmap_test.c 추가 반영이 필요합니다.
 - C-4 메모: lazy deletion을 위해 해시맵 Data에 expire_at 필드 추가 예정.
 - Python 최종 기능 미구현. 보너스 5개 모두 미선택.
 

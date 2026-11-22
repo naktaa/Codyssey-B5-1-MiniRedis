@@ -151,6 +151,36 @@ Review:
   - C value를 `char*`로 변경: 해시맵·Store·테스트 전부 수정이 필요하다.
 - 반영: 사용자 승인에 따라 Claude가 Store.h 필드·매크로, Store.c 원형·TODO, store_test.c 필드 초기화만 작성했다. 함수 본문은 사용자가 작성한다.
 
+### C-4 TTL 설계 결정
+
+- Decision:
+  1. `Data`에 `long long expire_at`(ms) 추가. 만료 없음은 `NO_EXPIRE`(Store.h, 값 0). 해시맵은 이 필드를 읽지 않고 Store가 put 직후 채운다.
+  2. `Store`에 `MinHeap heap` 추가(map·lru와 같은 값 멤버).
+  3. 현재 시각은 Store 함수의 `long long now` 인자로 받는다. 테스트는 숫자를 넣고 실제 프로그램은 현재 시각을 넣는다.
+  4. 만료 정리 `expire_if_needed(store, now)`를 모든 Store 명령 맨 앞에서 호출한다. 힙 맨 위가 now 이하인 동안 pop하고, 맨 위가 안 지났으면 멈춘다(최소 힙이라 나머지도 안 지남).
+  5. lazy deletion: DEL·SET 덮어쓰기·EXPIRE 재설정 때 힙은 건드리지 않는다. pop한 항목은 해시맵에 키가 있고 `expire_at`이 같을 때만 지우고, 아니면 버린다. pop한 key는 Store가 확인 후 free한다(C-3 소유권 규칙).
+  6. 만료로 지운 키는 `evicted_keys`에 세지 않는다(LRU 제거만 센다). used_memory는 delete_data가 줄인다.
+  7. TTL 남은 초는 내림.
+  8. 전체 조회(DBSIZE/KEYS)의 만료 정리 범위: 명령 전 정리(4번)로 만료 키가 이미 지워져 있으므로 별도 처리 없이 제외된다. [REQUIREMENTS](REQUIREMENTS.md) 미명시 항목 해결.
+  9. EXPIRE에서 힙 추가가 실패하면 만료 시각을 바꾸지 않고 `STORE_ERR_ALLOC`을 반환한다.
+  10. Store 반환값 규칙: store 함수 전체에서 반환 0 이상은 성공(Redis 응답 값), 음수는 내부 에러이며 예외가 없다. 현재 `STORE_ERR_ALLOC`이 0이라 응답 값(없는 키 0)과 겹치므로 음수로 바꾼다(Store.h TODO, 사용자 수정). TTL은 응답 값 -2/-1이 음수라 규칙과 겹치므로 `int store_ttl(Store*, const char* key, long long now, long long* out_ttl)`로 바꿔 응답 값(-2·-1·남은 초)을 `*out_ttl`로 전달하고, 반환값은 성공/에러만 나타낸다.
+  11. `hashmap_put`의 새 Data는 calloc으로 할당해 `lru_node = NULL`, `expire_at = 0(NO_EXPIRE)`로 시작한다(HashMap.c TODO, 사용자 수정). Store가 채우기 전 쓰레기 값을 없앤다.
+- Reason:
+  - 시각 인자: 테스트에서 실제로 기다리지 않고 만료 시점을 정확히 재현할 수 있다.
+  - 명령 전 정리: "키 명령 전 만료 확인", "만료된 GET은 LRU 미갱신", 전체 조회의 만료 제외가 한 곳에서 함께 지켜진다.
+  - 내림: 미션 예시(EXPIRE 3 직후 TTL 2)와 맞춘다. 단, 두 명령 사이에 1ms 이상 지나야 2가 된다. 같은 now로 호출하면 3이다.
+- Alternative / Why not:
+  - Store에 now 필드: 원형은 그대로지만 시각이 숨겨져 읽기 어렵다.
+  - 키 접근 때만 lazy 확인: 힙을 쓰지 않게 되어 "힙으로 가장 빠른 만료를 찾는다"는 목표와 맞지 않고, 전체 조회에 만료 키가 남는다.
+- 반영: 사용자 승인에 따라 Claude가 HashMap.h 필드, Store.h 상수·필드·원형, Store.c 원형·TODO와 기존 정의의 매개변수 목록, store_test.c의 now 인자·힙 초기화만 작성했다. 함수 본문은 사용자가 작성한다.
+
+### CONFIG SET maxmemory 축소 시점 결정
+
+- Decision: maxmemory를 현재 used_memory보다 낮추면 CONFIG SET 시점에 즉시 `evict_if_needed`로 제거한다. 구현은 CLI 단계에서 한다.
+- Reason: 다음 SET까지 INFO memory가 `used_memory > maxmemory` 상태로 보이는 것을 피한다.
+- Alternative / Why not: 다음 SET 때 제거(원문 문구 "SET 이후"에만 맞춤): 그 사이 INFO memory가 제한을 넘은 상태를 보여 준다.
+- [REQUIREMENTS](REQUIREMENTS.md) 미명시 항목 해결.
+
 <!-- 기록 형식
 ## YYYY-MM-DD
 
