@@ -203,13 +203,34 @@ size_t hashmap_size(const HashMap* map) {
  * key의 Data 주소를 돌려준다. 없으면 NULL. Store가 lru_node에 접근할 때 쓴다.
  * TODO: hashmap_find_node 결과로 Data 주소를 꺼내기.
  */
-Data* hashmap_get_data(const HashMap* map, const char* key);
+Data* hashmap_get_data(const HashMap* map, const char* key) {
+    Node* found = hashmap_find_node(map, key, NULL);
+
+    if (found == NULL) return NULL;
+
+    return found->data;
+}
 
 /*
  * 해시맵이 가진 모든 메모리를 해제한다. lru_node는 Store가 따로 해제한다.
  * TODO: 모든 버킷의 노드마다 key → Data → Node 순서로 해제하고, 마지막에 buckets 배열을 해제하기.
  */
-void hashmap_free(HashMap* map);
+void hashmap_free(HashMap* map) {
+    for (size_t i = 0; i < map->capacity; i++) {
+        Node* now = map->buckets[i].HEAD;
+
+        while (now) {
+            Node* next = now->next;
+            Data* data = now->data;
+
+            free(data->key);
+            free(data);
+            free(now);
+            now = next;
+        }
+    }
+    free(map->buckets);
+}
 
 /*
  * 구현 전 준비 TODO:
