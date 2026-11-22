@@ -115,7 +115,15 @@ int minheap_pop(MinHeap* heap, HeapItem* out_item);
  * 소유권: out_item->key는 힙이 가진 문자열을 빌린 것이다. 그 항목이 pop되기 전까지만 유효하다.
  * TODO: 직접 구현하기.
  */
-int minheap_peek(const MinHeap* heap, HeapItem* out_item);
+int minheap_peek(const MinHeap* heap, HeapItem* out_item) {
+    if (heap->size == 0) return 0;
+
+    *out_item = heap->items[0];
+
+    return 1;
+}
 
 /* 반환: 현재 저장된 항목 개수. TODO: 직접 구현하기. */
-size_t minheap_size(const MinHeap* heap);
+size_t minheap_size(const MinHeap* heap) {
+    return heap->size;
+}
