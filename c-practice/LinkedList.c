@@ -29,7 +29,7 @@ void insert_back(LinkedList* list, Node* now) {
 
 void remove_front(LinkedList* list) {
     if (list->HEAD == NULL && list->TAIL == NULL) {
-        printf("empty list!\n");
+        return;
     }
     else {
         Node* temp = list->HEAD;
@@ -46,7 +46,7 @@ void remove_front(LinkedList* list) {
 
 void remove_back(LinkedList* list) {
     if (list->HEAD == NULL && list->TAIL == NULL) {
-        printf("empty list!\n");
+        return;
     }
     else {
         Node* temp = list->TAIL;
@@ -77,7 +77,6 @@ void remove_node(LinkedList* list, Node* now) {
 
 void move_to_front(LinkedList* list, Node* now) {
     if (list->HEAD == now) {
-        printf("already front!\n");
         return;
     }
     else {
