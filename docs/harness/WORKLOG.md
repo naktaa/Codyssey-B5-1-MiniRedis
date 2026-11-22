@@ -130,6 +130,27 @@ Review:
 - C-4 메모(C-3에서는 구현하지 않음): lazy deletion. EXPIRE 재호출·SET 덮어쓰기·DEL 때 힙의 옛 항목은 지우지 않고 남긴다. pop 시 해시맵에 key가 없거나 해시맵의 `expire_at`과 다르면 버린다. 이를 위해 C-4에서 해시맵 `Data`에 `expire_at` 필드가 추가된다.
 - 반영: 사용자 요청에 따라 Claude가 구조체·함수 원형·역할 주석·TODO만 작성했다. 함수 본문·테스트 코드는 없다. `_heapify_up/_heapify_down`은 `MinHeap.c`의 `static` 원형이다.
 
+## 2026-11-22
+
+### C-4 메모리 제한 설계 결정
+
+- Decision:
+  1. 덮어쓰기 SET의 단일 항목이 maxmemory를 넘으면 OOM으로 명령을 거부하고 기존 값을 유지한다(Redis처럼 거부). OOM 검사를 put보다 앞에 둔다.
+  2. 삭제는 `static void delete_data(Store*, Data*)` 하나로 모으고 `store_del`·`evict_if_needed`가 함께 쓴다. `used_memory` 감소는 이 함수에서만 한다. `hashmap_remove(map, data->key)`는 마지막에 호출하고 그 뒤 data·key를 읽지 않는다.
+  3. 제거 루프 조건: `maxmemory > 0 && used_memory > maxmemory && lru.TAIL != NULL`.
+  4. `store_set` 반환값은 `STORE_OK 1` / `STORE_ERR_ALLOC 0` / `STORE_ERR_OOM -1` 매크로. get·del의 1/0은 그대로.
+  5. C의 value 길이는 int의 10진수 자릿수(`snprintf(NULL, 0, "%d", v)`)로 대체한다. Python은 value 문자열의 UTF-8 바이트 수.
+  6. 파일 범위 static 이름은 예약 식별자를 피해 `entry_size`, `evict_if_needed`로 한다. MinHeap의 `_heapify_up/_heapify_down`은 미션 지정 이름이라 유지한다.
+- Reason:
+  - 거부 후 기존 값 유지가 "저장하지 않고 OOM" 규칙과 맞고, 검사를 put 앞에 두면 되돌릴 것이 없다.
+  - evict가 `store_del(store, TAIL의 key)`를 부르면 넘긴 key가 삭제 과정에서 해제되는 같은 문자열이라, 이후 코드가 key를 쓰면 해제 후 사용이 된다. Data를 직접 넘기면 해시 조회도 한 번 줄어든다.
+  - TAIL 검사는 used_memory 계산 버그 시 NULL 접근·무한 루프를 막는다.
+  - CLI가 OOM 에러 문구를 따로 출력하려면 할당 실패와 구분해야 한다.
+- Alternative / Why not:
+  - evict에서 `store_del` 재사용: 위 key 해제 문제.
+  - C value를 `char*`로 변경: 해시맵·Store·테스트 전부 수정이 필요하다.
+- 반영: 사용자 승인에 따라 Claude가 Store.h 필드·매크로, Store.c 원형·TODO, store_test.c 필드 초기화만 작성했다. 함수 본문은 사용자가 작성한다.
+
 <!-- 기록 형식
 ## YYYY-MM-DD
 

@@ -23,6 +23,9 @@ int main(void) {
         return 1;
     }
     store.lru.HEAD = store.lru.TAIL = NULL;
+    store.used_memory = 0;
+    store.maxmemory = 0; // 무제한. 메모리 제한 테스트는 본문 구현 후 추가한다.
+    store.evicted_keys = 0;
 
     int value = 0;
 
@@ -69,7 +72,57 @@ int main(void) {
         lru_count++;
     }
     printf("LRU 개수 -> %zu, size -> %zu (기대: 21, 21)\n", lru_count, hashmap_size(&store.map));
-
+    // a=1(2) + k0~k9(각 3) + k10~k19(각 5) = 82
+    printf("used     -> %zu, evicted -> %zu (기대: 82, 0 / 무제한이라 제거 없음)\n",
+           store.used_memory, store.evicted_keys);
     store_free(&store);
+
+    printf("\n== 메모리 제한 (maxmemory 10) ==\n");
+    Store mem;
+    mem.map.capacity = 4;
+    mem.map.count = 0;
+    mem.map.buckets = calloc(mem.map.capacity, sizeof(LinkedList));
+    if (mem.map.buckets == NULL) {
+        return 1;
+    }
+    mem.lru.HEAD = mem.lru.TAIL = NULL;
+    mem.used_memory = 0;
+    mem.maxmemory = 10;
+    mem.evicted_keys = 0;
+
+    store_set(&mem, "a", 111);         // 4
+    store_set(&mem, "b", 222);         // 8
+    store_get(&mem, "a", &value);      // a가 최근
+    store_set(&mem, "c", 333);         // 12 > 10 → TAIL(b) 제거
+    print_lru(&mem); // 기대: c a
+    printf("used=%zu evicted=%zu (기대: 8, 1)\n", mem.used_memory, mem.evicted_keys);
+    printf("get b    -> %d (기대: 0, 제거됨)\n", store_get(&mem, "b", &value));
+
+    printf("\n== 기존 키 갱신 크기 ==\n");
+    store_set(&mem, "c", 3);           // 4 → 2
+    printf("줄어듦   -> used=%zu (기대: 6)\n", mem.used_memory);
+    store_set(&mem, "a", 11111);       // 4 → 6
+    printf("늘어남   -> used=%zu (기대: 8)\n", mem.used_memory);
+    print_lru(&mem); // 기대: a c
+
+    printf("\n== OOM ==\n");
+    printf("새 키    -> %d (기대: %d)\n", store_set(&mem, "big", 1234567890), STORE_ERR_OOM); // 3+10
+    printf("contains -> %d (기대: 0)\n", hashmap_contains(&mem.map, "big"));
+    printf("덮어쓰기 -> %d (기대: %d)\n", store_set(&mem, "a", 1234567890), STORE_ERR_OOM);  // 1+10
+    store_get(&mem, "a", &value);
+    printf("a 유지   -> %d (기대: 11111)\n", value);
+    printf("used=%zu evicted=%zu (기대: 8, 1)\n", mem.used_memory, mem.evicted_keys);
+
+    printf("\n== 경계: 딱 maxmemory ==\n");
+    printf("set x    -> %d (기대: %d)\n", store_set(&mem, "x", 123456789), STORE_OK); // 1+9 = 10
+    print_lru(&mem); // 기대: x  (18 → c 제거 16 → a 제거 10)
+    printf("used=%zu evicted=%zu (기대: 10, 3)\n", mem.used_memory, mem.evicted_keys);
+
+    printf("\n== del ==\n");
+    store_del(&mem, "x");
+    printf("used=%zu (기대: 0)\n", mem.used_memory);
+    print_lru(&mem); // 기대: (비어 있음)
+
+    store_free(&mem);
     return 0;
 }

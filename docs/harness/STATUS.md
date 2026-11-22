@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-22: C-4 1단계 LRU 연결 완료(사용자 sanitizer 실행 확인). 다음은 메모리 제한·LRU 제거.
+2026-11-22: C-4 2단계 메모리 제한·LRU 제거 완료(사용자 sanitizer 실행 확인).
 
 ## Completed
 
@@ -18,14 +18,15 @@
 - 2026-11-21 C-3 준비: 설계 6개 항목 결정, MinHeap.h/.c에 구조체·원형·역할 주석·TODO 작성(본문·테스트 없음).
 - 2026-11-22 C-3 완료: 사용자가 MinHeap 6개 연산(_heapify_up/down 포함)을 구현. Claude 작성 확인용 main([build/tmp/minheap_test.c](../../build/tmp/minheap_test.c), 미추적)을 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인. macOS에서 누수 검사는 미확인.
 - 2026-11-22 C-4 LRU 연결: HashMap.h 분리, Data에 lru_node 추가, 해시맵은 LRU를 모르고 [Store.c](../../c-practice/Store.c)(Store { map, lru })가 set/get/del/free에서 LRU를 갱신. 사용자가 hashmap_get_data/free와 Store 4개 함수를 구현, Claude 작성 [store_test.c](../../c-practice/store_test.c)를 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인.
+- 2026-11-22 C-4 메모리 제한: Store에 used_memory·maxmemory·evicted_keys와 STORE_OK/ERR_ALLOC/ERR_OOM 추가. 사용자가 entry_size·delete_data·evict_if_needed와 store_set의 OOM 거부·used_memory 갱신·LRU 제거를 구현. store_test.c 메모리 구간(LRU 제거 순서, 갱신 크기 증감, 새 키/덮어쓰기 OOM, maxmemory 경계, del)을 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인. 설계 근거는 WORKLOG "C-4 메모리 제한 설계 결정".
 
 ## In Progress
 
-C-4 2단계: 메모리 제한(used_memory·maxmemory·evicted_keys)과 SET 후 LRU 꼬리 제거 설계.
+없음(C-4 3단계 TTL 시작 전).
 
 ## Next
 
-메모리 제한·LRU 제거 → expire_at 추가와 힙 기반 lazy 만료. 핵심 흐름은 사용자가 직접, CLI 파싱·출력·테스트는 Claude가 제안 후 작성.
+expire_at 추가와 힙 기반 lazy 만료. 핵심 흐름은 사용자가 직접, CLI 파싱·출력·테스트는 Claude가 제안 후 작성.
 
 ## Open Issues
 
@@ -41,7 +42,7 @@ C-4 2단계: 메모리 제한(used_memory·maxmemory·evicted_keys)과 SET 후 L
 
 ## Current Task
 
-- 현재 단계: C-4 2단계 메모리 제한(LRU 연결 완료). 별도 TASK 파일 없이 [학습 계획](../../README.md)의 단계 ID를 사용합니다. 아래 항목은 C-2 진행 당시 기록입니다.
+- 현재 단계: C-4 2단계 메모리 제한 완료. 별도 TASK 파일 없이 [학습 계획](../../README.md)의 단계 ID를 사용합니다. 아래 항목은 C-2 진행 당시 기록입니다.
 - 이번 승인: 문자열 키·정수 값, 항목/관리 구조체, 해시/필수 여섯 연산의 원형·역할 설명·TODO 제공 계획에 사용자가 '그럼 한번 해줘'라고 승인했습니다. 기존 HashMap.c를 사용하며 별도 파일·함수 본문·정답 알고리즘·테스트 코드는 생성하지 않습니다. 자동 구현 위임·실행·Git 쓰기 승인으로 확대하지 않습니다.
 - 후속 선택: 기존 연결 리스트를 가져다 쓰는 재사용 방향으로 진행합니다. 이는 설계 방향 선택이며 에이전트의 소스 리팩터링·새 헤더 생성·기존 함수 수정 계획 승인은 아닙니다. 사용자가 직접 설계·구현합니다.
 - 후속 설계 요청: 사용자가 범용 데이터 표현을 정해달라고 요청해 void* data와 Node/실제 데이터의 소유권 분리를 선택했습니다. callback·매크로 기반 타입 생성 없이 진행하며 에이전트 소스 수정 승인은 아닙니다. 근거는 [WORKLOG](WORKLOG.md)의 C-2 범용 데이터 표현 결정에 기록했습니다.
