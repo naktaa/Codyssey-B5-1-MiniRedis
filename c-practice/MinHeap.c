@@ -37,13 +37,29 @@ static void _heapify_down(MinHeap* heap, size_t i);
  * 반환: 성공 1, 할당 실패 0.
  * TODO: capacity만큼 items를 할당하고 size와 capacity의 초기 값을 정하기.
  */
-int minheap_init(MinHeap* heap, size_t capacity);
+int minheap_init(MinHeap* heap, size_t capacity) {
+    HeapItem* InitItems = malloc(sizeof(HeapItem) * capacity);
+    if (InitItems == NULL) {
+        return 0;
+    }
+
+    heap->items = InitItems;
+    heap->size = 0;
+    heap->capacity = capacity;
+
+    return 1;
+}
 
 /*
  * 힙이 가진 모든 메모리를 해제한다.
  * TODO: 남아 있는 항목들의 key를 모두 해제한 뒤 items 배열을 해제하기.
  */
-void minheap_free(MinHeap* heap);
+void minheap_free(MinHeap* heap) {
+    for (size_t i = 0; i < heap->size; i++) {
+        free((heap->items + i)->key);
+    }
+    free(heap->items);
+}
 
 /*
  * (expire_at, key)를 추가한다. key는 strlen + 1 크기로 복사해서 저장한다.
