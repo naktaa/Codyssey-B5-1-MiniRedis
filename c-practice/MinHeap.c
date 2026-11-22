@@ -40,7 +40,26 @@ static void _heapify_up(MinHeap* heap, size_t i) {
  *       오른쪽 자식만 없는 경우를 구분하기.
  * TODO: 더 작은 자식보다 크면 자리를 바꾸고 i를 그 자식으로 옮기기. 아니면 멈춘다.
  */
-static void _heapify_down(MinHeap* heap, size_t i);
+static void _heapify_down(MinHeap* heap, size_t i) {
+    while (i * 2 + 1 < heap->size) {
+        long long ex_time = heap->items[i].expire_at;
+        long long min_time = heap->items[i * 2 + 1].expire_at;
+        size_t next_idx = i * 2 + 1;
+
+        if (i * 2 + 2 < heap->size) {
+            if (heap->items[i * 2 + 2].expire_at < min_time) {
+                min_time = heap->items[i * 2 + 2].expire_at;
+                next_idx += 1;
+            }
+        }
+        if (ex_time <= min_time) break;
+
+        HeapItem swap_item = heap->items[i];
+        heap->items[i] = heap->items[next_idx];
+        heap->items[next_idx] = swap_item;
+        i = next_idx;
+    }
+}
 
 /*
  * 빈 힙을 준비한다. capacity는 0보다 커야 한다(0이면 2배로 늘려도 0이다).
@@ -96,7 +115,7 @@ int minheap_push(MinHeap* heap, long long expire_at, const char* key) {
     heap->items[heap->size].key = new_key;
 
     _heapify_up(heap, heap->size);
-    (heap->size)++;
+    heap->size++;
 
     return 1;
 }
@@ -107,7 +126,17 @@ int minheap_push(MinHeap* heap, long long expire_at, const char* key) {
  * 소유권: out_item->key는 호출한 쪽으로 넘어간다. 힙은 해제하지 않는다.
  * TODO: items[0]을 전달하고, 마지막 항목을 0번으로 옮긴 뒤 _heapify_down으로 내리기.
  */
-int minheap_pop(MinHeap* heap, HeapItem* out_item);
+int minheap_pop(MinHeap* heap, HeapItem* out_item) {
+    if (heap->size == 0) return 0;
+
+    *out_item = heap->items[0];
+    heap->items[0] = heap->items[heap->size - 1];
+    heap->size--;
+
+    _heapify_down(heap, 0);
+
+    return 1;
+}
 
 /*
  * expire_at이 가장 작은 항목을 꺼내지 않고 *out_item에 복사한다.
