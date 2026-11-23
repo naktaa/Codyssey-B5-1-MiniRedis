@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-22: C-4 2단계 메모리 제한·LRU 제거 완료(사용자 sanitizer 실행 확인).
+2026-11-23: C-4 3단계 TTL 구현 완료(Claude sanitizer·leaks 실행 확인, 사용자 실행 확인 전).
 
 ## Completed
 
@@ -19,10 +19,11 @@
 - 2026-11-22 C-3 완료: 사용자가 MinHeap 6개 연산(_heapify_up/down 포함)을 구현. Claude 작성 확인용 main([build/tmp/minheap_test.c](../../build/tmp/minheap_test.c), 미추적)을 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인. macOS에서 누수 검사는 미확인.
 - 2026-11-22 C-4 LRU 연결: HashMap.h 분리, Data에 lru_node 추가, 해시맵은 LRU를 모르고 [Store.c](../../c-practice/Store.c)(Store { map, lru })가 set/get/del/free에서 LRU를 갱신. 사용자가 hashmap_get_data/free와 Store 4개 함수를 구현, Claude 작성 [store_test.c](../../c-practice/store_test.c)를 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인.
 - 2026-11-22 C-4 메모리 제한: Store에 used_memory·maxmemory·evicted_keys와 STORE_OK/ERR_ALLOC/ERR_OOM 추가. 사용자가 entry_size·delete_data·evict_if_needed와 store_set의 OOM 거부·used_memory 갱신·LRU 제거를 구현. store_test.c 메모리 구간(LRU 제거 순서, 갱신 크기 증감, 새 키/덮어쓰기 OOM, maxmemory 경계, del)을 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인. 설계 근거는 WORKLOG "C-4 메모리 제한 설계 결정".
+- 2026-11-23 C-4 TTL: STORE_ERR_ALLOC을 -2로, hashmap_put의 새 Data를 calloc으로 변경(사용자 요청으로 Claude 수정). expire_if_needed(힙 peek/pop + 해시맵 expire_at 일치 시만 삭제)·store_expire·store_ttl은 Claude가 보여 준 코드를 사용자가 작성. set/get/del 명령 전 만료 정리, SET 덮어쓰기 TTL 초기화, store_free 힙 해제는 사용자 요청으로 Claude 구현. store_test.c TTL 구간(내림, 오래된 힙 항목, DEL 후 재SET, 덮어쓰기, EXPIRE 0, 만료 GET의 LRU 미갱신, evicted 미집계)을 Claude가 sanitizer 빌드로 실행해 기대값 일치, leaks 0 확인. 설계 근거는 WORKLOG "C-4 TTL 설계 결정".
 
 ## In Progress
 
-C-4 3단계 TTL: 설계 결정(WORKLOG "C-4 TTL 설계 결정")·템플릿 준비 완료, 본문 구현 대기.
+C-4 3단계 TTL 구현 완료. 다음 단계 계획은 커밋 후 작성.
 
 ## Next
 
@@ -32,7 +33,6 @@ expire_at 추가와 힙 기반 lazy 만료. 핵심 흐름은 사용자가 직접
 
 - C-1 연결 리스트 6개 중 remove_front·remove_back 단독 호출은 미확인(remove_node 경유로만 실행). move_to_front의 디버그 출력은 사용자가 제거.
 - HashMap.h의 HashMap 구조체 주석에 예전 Entry** 설명이 남아 있습니다(현재 구조는 LinkedList* buckets).
-- C-4 메모: lazy deletion을 위해 해시맵 Data에 expire_at 필드 추가 예정.
 - Python 최종 기능 미구현. 보너스 5개 모두 미선택.
 
 ## Recent Decisions

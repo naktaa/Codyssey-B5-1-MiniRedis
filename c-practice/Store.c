@@ -67,7 +67,27 @@ static void evict_if_needed(Store* store) {
  *       오래된 항목(이미 지워졌거나 만료 시각이 바뀐 키)은 버린다. 꺼낸 key의 해제 책임도 지키기.
  *       만료로 지운 키는 evicted_keys에 세지 않는다.
  */
-static void expire_if_needed(Store* store, long long now);
+static void expire_if_needed(Store* store, long long now) {
+    HeapItem item;
+    int res;
+
+    while (1) {
+        res = minheap_peek(&store->heap, &item);
+        if (res == 0) return;
+        if (item.expire_at > now) return;
+
+        minheap_pop(&store->heap, &item);
+
+        Data* found = hashmap_get_data(&store->map, item.key);
+
+        // 키가 있고 만료 시각도 같을 때만 진짜 만료. 아니면 오래된 기록이라 버리기만 한다.
+        if (found != NULL && found->expire_at == item.expire_at) {
+            delete_data(store, found);
+        }
+
+        free(item.key);
+    }
+}
 
 /*
  * 키를 저장하거나 갱신하고, 그 키를 LRU 맨 앞으로 둔다.
@@ -85,6 +105,8 @@ static void expire_if_needed(Store* store, long long now);
  *   - 새 키든 덮어쓰기든 저장된 키의 TTL은 없음 상태가 되게 하기.
  */
 int store_set(Store* store, const char* key, int value, long long now) {
+    expire_if_needed(store, now); // 만료된 키를 먼저 지워야 아래 '기존 키' 판단과 메모리 계산이 맞다
+
     size_t new_memory = entry_size(key, value);
 
     // 단일 엔트리가 maxmemory 초과하면 OOM
@@ -115,6 +137,7 @@ int store_set(Store* store, const char* key, int value, long long now) {
     }
     else {
         move_to_front(&store->lru, data->lru_node);
+        data->expire_at = NO_EXPIRE; // SET 덮어쓰기는 TTL을 없앤다. 힙의 예전 항목은 expire_if_needed가 버린다
     }
 
     store->used_memory -= prev_memory;
@@ -130,6 +153,7 @@ int store_set(Store* store, const char* key, int value, long long now) {
  * TTL TODO: 명령 전에 만료 정리하기(만료된 키는 없는 키가 되어 LRU도 갱신되지 않는다).
  */
 int store_get(Store* store, const char* key, int* out_value, long long now) {
+    expire_if_needed(store, now); // 만료된 키는 여기서 지워져 '없는 키'가 되고 LRU도 갱신되지 않는다
     Data* data = hashmap_get_data(&store->map, key);
     if (data == NULL) return 0;
 
@@ -148,6 +172,7 @@ int store_get(Store* store, const char* key, int* out_value, long long now) {
  * TTL TODO: 명령 전에 만료 정리하기. 힙의 항목은 그대로 두어도 된다(lazy deletion).
  */
 int store_del(Store* store, const char* key, long long now) {
+    expire_if_needed(store, now); // 만료된 키를 DEL하면 '없는 키'로 0이 나오게
     HashMap* map = &store->map;
 
     Data* data = hashmap_get_data(map, key);
@@ -165,14 +190,47 @@ int store_del(Store* store, const char* key, long long now) {
  *       그 외에는 만료 시각을 기록하고 힙에도 넣은 뒤 1.
  *       힙 추가가 실패하면 만료 시각을 바꾸지 않고 STORE_ERR_ALLOC(음수로 바꾼 뒤의 값) 반환.
  */
-int store_expire(Store* store, const char* key, long long seconds, long long now);
+int store_expire(Store* store, const char* key, long long seconds, long long now) {
+    expire_if_needed(store, now);
+
+    Data* data = hashmap_get_data(&store->map, key);
+    if (data == NULL) return 0;
+
+    if (seconds <= 0) {
+        delete_data(store, data);
+        return 1;
+    }
+
+    long long expire_at = now + seconds * 1000;
+
+    if (!minheap_push(&store->heap, expire_at, key)) return STORE_ERR_ALLOC;
+
+    data->expire_at = expire_at;
+    return 1;
+}
 
 /*
  * TTL key. 남은 초를 *out_ttl에 전달한다. 반환은 성공 0 이상 / 에러 음수.
  * TODO: 명령 전에 만료 정리하기. 없는 키 -2, 만료 없음 -1, 그 외 남은 시간을 초 단위로 내림.
  *       -2·-1도 Redis 응답 값이므로 반환값이 아니라 *out_ttl로 전달한다.
  */
-int store_ttl(Store* store, const char* key, long long now, long long* out_ttl);
+int store_ttl(Store* store, const char* key, long long now, long long* out_ttl) {
+    expire_if_needed(store, now);
+
+    Data* data = hashmap_get_data(&store->map, key);
+    if (data == NULL) {
+        *out_ttl = -2;
+        return 1;
+    }
+
+    if (data->expire_at == NO_EXPIRE) {
+        *out_ttl = -1;
+        return 1;
+    }
+
+    *out_ttl = (data->expire_at - now) / 1000;
+    return 1;
+}
 
 /*
  * Store가 가진 모든 메모리를 해제한다.
@@ -189,4 +247,5 @@ void store_free(Store* store) {
     }
 
     hashmap_free(&store->map);
+    minheap_free(&store->heap); // 힙 배열과 힙이 복사해 가진 key 문자열을 해제
 }

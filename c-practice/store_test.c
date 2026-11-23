@@ -132,5 +132,88 @@ int main(void) {
     print_lru(&mem); // 기대: (비어 있음)
 
     store_free(&mem);
+
+    // TTL 구간: now(ms)를 직접 넣어 시간 흐름을 흉내 낸다. 시각은 앞으로만 간다.
+    printf("\n== TTL 기본 ==\n");
+    Store ttl;
+    ttl.map.capacity = 4;
+    ttl.map.count = 0;
+    ttl.map.buckets = calloc(ttl.map.capacity, sizeof(LinkedList));
+    if (ttl.map.buckets == NULL) {
+        return 1;
+    }
+    ttl.lru.HEAD = ttl.lru.TAIL = NULL;
+    ttl.used_memory = 0;
+    ttl.maxmemory = 0;
+    ttl.evicted_keys = 0;
+    if (!minheap_init(&ttl.heap, 4)) {
+        return 1;
+    }
+
+    long long t = 0;
+    store_set(&ttl, "a", 1, 0);
+    store_ttl(&ttl, "a", 0, &t);
+    printf("ttl a       -> %lld (기대: -1, 만료 없음)\n", t);
+    store_ttl(&ttl, "none", 0, &t);
+    printf("ttl none    -> %lld (기대: -2, 없는 키)\n", t);
+    printf("expire none -> %d (기대: 0)\n", store_expire(&ttl, "none", 10, 0));
+
+    printf("expire a 3  -> %d (기대: 1)\n", store_expire(&ttl, "a", 3, 0)); // 만료 시각 3000
+    store_ttl(&ttl, "a", 0, &t);
+    printf("ttl a @0    -> %lld (기대: 3)\n", t);
+    store_ttl(&ttl, "a", 1, &t);
+    printf("ttl a @1    -> %lld (기대: 2, 내림)\n", t);
+    store_ttl(&ttl, "a", 2999, &t);
+    printf("ttl a @2999 -> %lld (기대: 0)\n", t);
+    printf("get a @3000 -> %d (기대: 0, 만료)\n", store_get(&ttl, "a", &value, 3000));
+    printf("size=%zu used=%zu evicted=%zu (기대: 0, 0, 0 / 만료는 evicted에 안 셈)\n",
+           hashmap_size(&ttl.map), ttl.used_memory, ttl.evicted_keys);
+
+    printf("\n== EXPIRE 재설정 (오래된 힙 항목) ==\n");
+    store_set(&ttl, "b", 2, 3000);
+    store_expire(&ttl, "b", 10, 3000);  // 13000
+    store_expire(&ttl, "b", 20, 4000);  // 24000. 힙에 (13000, b)가 남는다
+    printf("get b @14000 -> %d (기대: 1, 13000 항목은 버려짐)\n", store_get(&ttl, "b", &value, 14000));
+    store_ttl(&ttl, "b", 14000, &t);
+    printf("ttl b @14000 -> %lld (기대: 10)\n", t);
+    printf("get b @24000 -> %d (기대: 0, 만료)\n", store_get(&ttl, "b", &value, 24000));
+
+    printf("\n== DEL 후 같은 이름 다시 SET ==\n");
+    store_set(&ttl, "c", 1, 30000);
+    store_expire(&ttl, "c", 5, 30000);  // 35000
+    store_del(&ttl, "c", 30000);
+    store_set(&ttl, "c", 2, 30000);     // 새 c. 만료 없음
+    found = store_get(&ttl, "c", &value, 35000);
+    printf("get c @35000 -> found=%d value=%d (기대: 1, 2)\n", found, value);
+    store_ttl(&ttl, "c", 35000, &t);
+    printf("ttl c        -> %lld (기대: -1)\n", t);
+
+    printf("\n== SET 덮어쓰기는 TTL을 없앤다 ==\n");
+    store_set(&ttl, "d", 1, 40000);
+    store_expire(&ttl, "d", 5, 40000);  // 45000
+    store_set(&ttl, "d", 2, 40000);
+    store_ttl(&ttl, "d", 40000, &t);
+    printf("ttl d        -> %lld (기대: -1)\n", t);
+    found = store_get(&ttl, "d", &value, 45000);
+    printf("get d @45000 -> found=%d value=%d (기대: 1, 2)\n", found, value);
+
+    printf("\n== EXPIRE 0 이하는 즉시 삭제 ==\n");
+    store_set(&ttl, "e", 1, 50000);
+    printf("expire e 0   -> %d (기대: 1)\n", store_expire(&ttl, "e", 0, 50000));
+    printf("get e        -> %d (기대: 0)\n", store_get(&ttl, "e", &value, 50000));
+
+    printf("\n== 만료된 키의 GET은 LRU를 바꾸지 않는다 ==\n");
+    store_set(&ttl, "f", 1, 60000);
+    store_set(&ttl, "g", 1, 60000);
+    store_expire(&ttl, "f", 1, 60000);  // 61000
+    print_lru(&ttl); // 기대: g f d c
+    printf("get f @61000 -> %d (기대: 0)\n", store_get(&ttl, "f", &value, 61000));
+    print_lru(&ttl); // 기대: g d c
+    // c=2 + d=2 + g=2
+    printf("used=%zu evicted=%zu (기대: 6, 0)\n", ttl.used_memory, ttl.evicted_keys);
+
+    // 힙에 항목이 남은 채로 free → 누수 검사로 store_free의 힙 해제를 확인한다
+    store_expire(&ttl, "g", 100, 61000);
+    store_free(&ttl);
     return 0;
 }

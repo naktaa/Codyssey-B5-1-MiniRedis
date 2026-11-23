@@ -67,7 +67,7 @@ int hashmap_put(HashMap* map, const char* key, int value) {
         return 1;
     }
 
-    Data* NewData = malloc(sizeof(Data));
+    Data* NewData = calloc(1, sizeof(Data)); // calloc: lru_node·expire_at을 0(NULL·NO_EXPIRE)으로 시작해 쓰레기 값을 없앤다.
     if (NewData == NULL) {
         return 0;
     }
