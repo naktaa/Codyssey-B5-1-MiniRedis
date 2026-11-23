@@ -13,8 +13,7 @@ typedef struct Data {
 } Data;
 
 typedef struct HashMap {
-    // 각 버킷이 첫 Entry의 주소를 저장하므로 배열의 원소 타입은 Entry*이다.
-    // 그 배열을 동적으로 관리할 시작 주소이므로 Entry**로 표현한다.
+    // 버킷 배열. 각 칸이 한 버킷의 LinkedList이고, 그 Node의 data가 Data*를 가리킨다.
     LinkedList* buckets;
     size_t capacity; // 버킷 개수. 항목 개수와 다르며, 사용 전 0보다 커야 한다.
     size_t count;    // 저장된 서로 다른 키의 개수.

@@ -181,6 +181,26 @@ Review:
 - Alternative / Why not: 다음 SET 때 제거(원문 문구 "SET 이후"에만 맞춤): 그 사이 INFO memory가 제한을 넘은 상태를 보여 준다.
 - [REQUIREMENTS](REQUIREMENTS.md) 미명시 항목 해결.
 
+### PY-1 설계 결정
+
+- Decision:
+  0. 포팅 원칙: 학습 목표(자료구조 직접 구현)는 C 단계에서 마쳤다. Python은 새로 설계하지 않고 사용자가 작성한 C 코드를 구조·이름·로직 그대로 옮긴다. 아래 1~7은 그 원칙 안에서 언어 차이로 생기는 부분만 정한 것이다(예: `free`·`malloc` 실패 처리는 Python에 없어 빠지고, NULL은 `None`).
+  1. 금지: `dict`·`set`·`collections`(미션 7절), `heapq`(CLAUDE.md 규칙), 내장 `hash()`(사용자 기준). 핵심 자료구조는 직접 만든 것만 쓴다.
+  2. 해시: C의 31배 누적을 옮긴다. `key.encode("utf-8")`의 **바이트**를 누적하고(C의 `unsigned char`와 같게, 문자 `ord` 아님) Python 정수는 크기 제한이 없으므로 매 단계 64비트로 마스킹해 C `size_t`(macOS 64비트) 오버플로와 같은 값을 낸다.
+  3. 배열: Python `list`는 미션 7절이 허용한 "고정 길이 배열/인덱스 접근" 수준으로만 쓴다. `[None] * capacity`로 할당하고(버킷은 `[LinkedList() for _ in range(capacity)]`로 각 칸을 별도 객체로) size·capacity를 직접 관리하며, 2배 확장도 새 배열 할당·복사로 직접 한다. `append`의 자동 확장에 기대지 않는다.
+  4. 핵심 클래스·함수에 docstring을 작성한다(미션 7절).
+  5. value는 C의 `int` 대신 `str`. used_memory는 원문 공식 `len(key.encode("utf-8")) + len(value.encode("utf-8"))`. C의 int 10진수 자릿수는 value가 int였던 C 실습용 대체였다.
+  6. 파일: PY-1은 `python/linked_list.py`·`hash_map.py`·`min_heap.py`. `store.py`(Store 결합)와 store_test 이식은 PY-2, CLI는 PY-2의 `main.py`.
+  7. 테스트: `tests/` 아래 unittest. 실행은 `python3 -m unittest discover -s tests`, 테스트 파일 맨 앞에서 `python/` 경로를 추가해 모듈을 불러온다. C hashmap_test·minheap_test 시나리오와 기대값을 옮기고, 연결 리스트는 C-1에서 미확인인 remove_front·remove_back 단독 호출도 확인한다.
+- Reason:
+  - 바이트 기준·64비트 마스킹: C와 같은 키가 같은 해시값을 내어 버킷 배치를 비교·설명할 수 있다. 한글처럼 다중 바이트 키에서 `ord` 누적은 C와 달라진다.
+  - 고정 길이 list: 미션이 허용한 범위 안에서 C의 배열·capacity 관리 경험을 그대로 옮긴다.
+  - store.py를 PY-2로: README 단계 정의와 "지금 단계에 필요한 것만" 규칙에 맞춘다.
+- Alternative / Why not:
+  - 내장 `hash()`: 실행마다 문자열 해시가 달라질 수 있고(PYTHONHASHSEED) 직접 설계한 해시가 아니다.
+  - `list.append` 자동 확장: capacity 2배 확장을 직접 구현하지 않게 된다.
+  - 문자 `ord` 누적: ASCII 밖에서 C와 결과가 다르다.
+
 <!-- 기록 형식
 ## YYYY-MM-DD
 

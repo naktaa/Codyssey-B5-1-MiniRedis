@@ -149,7 +149,6 @@ int store_set(Store* store, const char* key, int value, long long now) {
 /*
  * 키가 있으면 값을 전달하고 LRU 맨 앞으로 옮긴다.
  * TODO: hashmap_get_data로 찾고, 없으면 0. 있으면 move_to_front 후 값을 전달하기.
- *       (C-4 다음 단계에서 "만료 확인 후에만 갱신" 규칙이 여기에 붙는다)
  * TTL TODO: 명령 전에 만료 정리하기(만료된 키는 없는 키가 되어 LRU도 갱신되지 않는다).
  */
 int store_get(Store* store, const char* key, int* out_value, long long now) {

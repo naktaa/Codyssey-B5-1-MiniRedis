@@ -9,7 +9,6 @@
 
 // store_set 반환값. 나중에 CLI가 OOM 에러 문구를 따로 출력하려고 구분한다.
 // 규칙: store 함수 전체에서 반환 0 이상은 성공(Redis 응답 값), 음수는 내부 에러. 예외 없음.
-// TODO: STORE_ERR_ALLOC이 0이라 '없는 키 0' 같은 응답 값과 겹친다. 규칙에 맞게 음수로 바꾸기.
 #define STORE_OK 1
 #define STORE_ERR_ALLOC -2
 #define STORE_ERR_OOM -1
