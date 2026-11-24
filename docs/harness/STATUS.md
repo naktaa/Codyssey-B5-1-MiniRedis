@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-23: C-4 3단계 TTL 구현 완료(Claude sanitizer·leaks 실행 확인, 사용자 실행 확인).
+2026-11-24: PY-1·PY-2 Python 포팅 완료(Claude unittest 30개·REPL 실행 확인, 사용자 REPL 일부 실행).
 
 ## Completed
 
@@ -20,19 +20,21 @@
 - 2026-11-22 C-4 LRU 연결: HashMap.h 분리, Data에 lru_node 추가, 해시맵은 LRU를 모르고 [Store.c](../../c-practice/Store.c)(Store { map, lru })가 set/get/del/free에서 LRU를 갱신. 사용자가 hashmap_get_data/free와 Store 4개 함수를 구현, Claude 작성 [store_test.c](../../c-practice/store_test.c)를 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인.
 - 2026-11-22 C-4 메모리 제한: Store에 used_memory·maxmemory·evicted_keys와 STORE_OK/ERR_ALLOC/ERR_OOM 추가. 사용자가 entry_size·delete_data·evict_if_needed와 store_set의 OOM 거부·used_memory 갱신·LRU 제거를 구현. store_test.c 메모리 구간(LRU 제거 순서, 갱신 크기 증감, 새 키/덮어쓰기 OOM, maxmemory 경계, del)을 사용자가 sanitizer 빌드로 실행해 기대값 일치 확인. 설계 근거는 WORKLOG "C-4 메모리 제한 설계 결정".
 - 2026-11-23 C-4 TTL: STORE_ERR_ALLOC을 -2로, hashmap_put의 새 Data를 calloc으로 변경(사용자 요청으로 Claude 수정). expire_if_needed(힙 peek/pop + 해시맵 expire_at 일치 시만 삭제)·store_expire·store_ttl은 Claude가 보여 준 코드를 사용자가 작성. set/get/del 명령 전 만료 정리, SET 덮어쓰기 TTL 초기화, store_free 힙 해제는 사용자 요청으로 Claude 구현. store_test.c TTL 구간(내림, 오래된 힙 항목, DEL 후 재SET, 덮어쓰기, EXPIRE 0, 만료 GET의 LRU 미갱신, evicted 미집계)을 Claude가 sanitizer 빌드로 실행해 기대값 일치, leaks 0 확인. 사용자도 실행 확인. 설계 근거는 WORKLOG "C-4 TTL 설계 결정".
+- 2026-11-24 PY-1: 사용자 요청으로 Claude가 C 연결 리스트·해시맵·최소 힙을 [linked_list.py](../../python/linked_list.py)·[hash_map.py](../../python/hash_map.py)·[min_heap.py](../../python/min_heap.py)로 로직 그대로 포팅. 사용자 결정으로 C식 모듈 함수 대신 원문 이름의 클래스 메서드(put/get/remove/contains/keys/size, push/pop/peek/size, _heapify_up/down)로 작성. 언어 차이: free·할당 실패 분기 제거, out 파라미터→반환값(None), keys()는 출력 대신 count 길이 배열 반환, 힙 개수 필드는 size() 메서드와 겹쳐 count. 해시는 UTF-8 바이트·64비트 마스킹으로 C hashmap_hash와 같은 값임을 Claude가 C 실행 결과와 비교 확인. remove_front·remove_back 단독 호출은 test_linked_list.py로 확인.
+- 2026-11-24 PY-2: 사용자 요청으로 Claude가 Store.c를 [store.py](../../python/store.py)로 포팅(entry_size만 미션 공식 len(utf8(key))+len(utf8(value))로 변경, STORE_ERR_ALLOC 제거, del→delete). CLI 명령용으로 C에 없던 exists·dbsize·keys·info_memory 추가(모두 만료 정리 후 조회). [main.py](../../python/main.py) REPL 새로 작성: 명령 10개, 미션 원문 에러 문구 4종, 큰따옴표 값, KEYS는 원문 예시의 `1. "key"` 형식, 출력은 실제 Redis가 아닌 미션 원문 기준. tests/ unittest 30개(C hashmap_test·store_test 시나리오, 미션 8절 예시·에러 예시 포함)를 Claude가 실행해 모두 통과, 미션 예시 REPL 출력 일치 확인. 사용자는 REPL에서 SET 2개 실행 확인(전체 테스트는 미실행).
 
 ## In Progress
 
-PY-1: 사용자가 작성한 C 연결 리스트·체이닝 해시맵·최소 힙 코드를 구조·이름·로직 그대로 python/linked_list.py·hash_map.py·min_heap.py로 포팅하고 tests/ unittest로 확인. 설계 근거는 WORKLOG "PY-1 설계 결정".
+없음. (PY-1·PY-2 완료. 다음 단계는 커밋 후 작성)
 
 ## Next
 
-PY-2: store.py(Store.c 그대로 포팅, store_test 시나리오 이식)와 main.py CLI(C에 없던 부분이라 새로 작성).
+커밋 후 작성.
 
 ## Open Issues
 
-- C-1 연결 리스트 6개 중 remove_front·remove_back 단독 호출은 미확인(remove_node 경유로만 실행). PY-1 연결 리스트 테스트에서 단독 호출을 확인한다.
-- Python 최종 기능 미구현. 보너스 5개 모두 미선택.
+- 사용자의 전체 unittest·REPL 시나리오 직접 실행은 미확인.
+- README 실행 방법·단계 표 상태는 PY-1 이전 내용 그대로. 보너스 5개 모두 미선택.
 
 ## Recent Decisions
 
