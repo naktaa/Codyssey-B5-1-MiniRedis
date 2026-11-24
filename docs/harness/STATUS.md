@@ -28,12 +28,12 @@
 
 ## In Progress
 
-- 보너스 3 이진 트리: C 구현·커밋 완료(9348305). Python 포팅 대기.
-- 보너스 4 BST: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 C로 구현 ([BST.c](../../c-practice/BST.c): TreeNode·tree_inorder·tree_free 재사용, insert(중복 무시)·search(반복문)·remove(자식 0/1/2개, 2개는 오른쪽 최솟값 후계자), 확인용 [bst_test.c](../../c-practice/bst_test.c)). sanitizer 기대값 일치·leaks 0을 Claude가 확인.
+- 보너스 3 이진 트리: C 구현·커밋 완료(9348305). Claude가 [binary_tree.py](../../python/binary_tree.py)로 포팅(순회 결과는 출력 대신 DynamicArray로 반환, 레벨 순회 큐는 LinkedList, tree_free는 GC로 대체).
+- 보너스 4 BST: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 C로 구현 ([BST.c](../../c-practice/BST.c): TreeNode·tree_inorder·tree_free 재사용, insert(중복 무시)·search(반복문)·remove(자식 0/1/2개, 2개는 오른쪽 최솟값 후계자), 확인용 [bst_test.c](../../c-practice/bst_test.c)). sanitizer 기대값 일치·leaks 0을 Claude가 확인. 커밋(ba64325) 후 [bst.py](../../python/bst.py)로 포팅. tests/test_binary_tree.py·test_bst.py 추가, unittest 46개 통과를 Claude가 확인.
 
 ## Next
 
-C 커밋 후 보너스 3·4 Python 포팅. 이후 보너스 5.
+보너스 3·4 Python 포팅 커밋 후 보너스 5.
 
 ## Open Issues
 
