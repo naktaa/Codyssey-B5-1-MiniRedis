@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-24: PY-1·PY-2 Python 포팅 완료(Claude unittest 30개·REPL 실행 확인, 사용자 REPL 일부 실행). C 코드 기준 학습 노트 작성.
+2026-11-24: 필수(PY-1·PY-2) 완료 후 `bonus` 브랜치에서 보너스 1 동적 배열 완료(Claude 실행 확인, 사용자 미검증).
 
 ## Completed
 
@@ -23,10 +23,12 @@
 - 2026-11-24 PY-1: 사용자 요청으로 Claude가 C 연결 리스트·해시맵·최소 힙을 [linked_list.py](../../python/linked_list.py)·[hash_map.py](../../python/hash_map.py)·[min_heap.py](../../python/min_heap.py)로 로직 그대로 포팅. 사용자 결정으로 C식 모듈 함수 대신 원문 이름의 클래스 메서드(put/get/remove/contains/keys/size, push/pop/peek/size, _heapify_up/down)로 작성. 언어 차이: free·할당 실패 분기 제거, out 파라미터→반환값(None), keys()는 출력 대신 count 길이 배열 반환, 힙 개수 필드는 size() 메서드와 겹쳐 count. 해시는 UTF-8 바이트·64비트 마스킹으로 C hashmap_hash와 같은 값임을 Claude가 C 실행 결과와 비교 확인. remove_front·remove_back 단독 호출은 test_linked_list.py로 확인.
 - 2026-11-24 PY-2: 사용자 요청으로 Claude가 Store.c를 [store.py](../../python/store.py)로 포팅(entry_size만 미션 공식 len(utf8(key))+len(utf8(value))로 변경, STORE_ERR_ALLOC 제거, del→delete). CLI 명령용으로 C에 없던 exists·dbsize·keys·info_memory 추가(모두 만료 정리 후 조회). [main.py](../../python/main.py) REPL 새로 작성: 명령 10개, 미션 원문 에러 문구 4종, 큰따옴표 값, KEYS는 원문 예시의 `1. "key"` 형식, 출력은 실제 Redis가 아닌 미션 원문 기준. tests/ unittest 30개(C hashmap_test·store_test 시나리오, 미션 8절 예시·에러 예시 포함)를 Claude가 실행해 모두 통과, 미션 예시 REPL 출력 일치 확인. 사용자는 REPL에서 SET 2개 실행 확인(전체 테스트는 미실행).
 - 2026-11-24 학습 노트: 사용자 요청으로 Claude가 [study-note.md](../study-note.md)를 사용자가 작성한 C 코드 기준으로 작성(자료구조 3개·Store 결합·Q1~Q8·C→Python 포팅 표·부록). 그림 1(images/store-structure.png)은 자리와 메모만 두었고 이미지는 사용자가 넣음. 코드 링크는 레포 루트 절대 경로 + 시작 줄 앵커(`#L138`) 형식으로 정하고, 미리보기 클릭 시 새 탭·IntelliSense 꺼짐이 없음을 사용자가 확인. 이 규칙을 [CLAUDE.md](../../CLAUDE.md) "문서의 코드 링크"와 [LEARNING_TEMPLATE.md](learning/LEARNING_TEMPLATE.md)에 반영.
+- 2026-11-24 시연 스크립트: 사용자 요청으로 Claude가 [demo.py](../../scripts/demo.py)(엔터 단계형, 41 TASK, Store 내부 상태 표시)와 [demo-scenario.md](../demo-scenario.md)를 작성, 사용자가 화면 구조를 수정. 자동·엔터 지연·EOF·Ctrl+C(exit 130)를 Claude가 확인.
+- 2026-11-24 보너스 1 동적 배열: 사용자 요청으로 Claude가 [DynamicArray.c](../../c-practice/DynamicArray.c)(int 원소, append 시 realloc 2배, get/set은 index < size만, remove는 뒤 원소를 당겨 순서 유지 O(n))와 확인용 [dynarray_test.c](../../c-practice/dynarray_test.c)를 구현, sanitizer 실행 기대값 일치·leaks 0 확인. [dynamic_array.py](../../python/dynamic_array.py)로 포팅하고 Python [min_heap.py](../../python/min_heap.py) 저장소를 DynamicArray로 교체(push는 append, pop은 끝 칸 remove, heapify는 get/set). 해시맵 버킷은 rehash가 필요해, C MinHeap은 원소 타입이 달라 적용하지 않음. unittest 36개(신규 6개)·시연 41/41 통과를 Claude가 확인.
 
 ## In Progress
 
-없음. (PY-1·PY-2 완료. 다음 단계는 커밋 후 작성)
+없음. (보너스 1 완료. 다음 단계는 커밋 후 작성)
 
 ## Next
 
@@ -35,7 +37,7 @@
 ## Open Issues
 
 - 사용자의 전체 unittest·REPL 시나리오 직접 실행은 미확인.
-- 보너스 5개 모두 미선택.
+- 보너스 2~5 미선택. 보너스 1은 사용자 직접 실행 미확인.
 - C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(Python test_min_heap.py로만 확인 가능). 학습 노트 그림 1 이미지 미작성.
 
 ## Recent Decisions

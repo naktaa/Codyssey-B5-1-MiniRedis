@@ -36,7 +36,7 @@ class TestMinHeap(unittest.TestCase):
         heap = MinHeap(1)
         for t in (3, 1, 2, 5, 4):
             heap.push(t, "k%d" % t)
-        self.assertEqual(heap.capacity, 8)  # 1 → 2 → 4 → 8
+        self.assertEqual(heap.items.capacity, 8)  # 1 → 2 → 4 → 8 (확장은 DynamicArray가 맡음)
         self.assertEqual(heap.size(), 5)
         self.assertEqual([heap.pop().key for _ in range(5)], ["k1", "k2", "k3", "k4", "k5"])
 

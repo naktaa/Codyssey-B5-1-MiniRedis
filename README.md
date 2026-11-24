@@ -11,9 +11,9 @@
 ├── CLAUDE.md            # Claude Code 진행 지침
 ├── AGENTS.md            # Codex용 기록
 ├── README.md
-├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store (.h/.c), 확인용 hashmap_test.c, store_test.c
-├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, min_heap.py, store.py, main.py
-├── tests/               # unittest: test_linked_list.py, test_hash_map.py, test_min_heap.py, test_store.py, test_main.py
+├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store, DynamicArray (.h/.c), 확인용 hashmap_test.c, store_test.c, dynarray_test.c
+├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, dynamic_array.py, min_heap.py, store.py, main.py
+├── tests/               # unittest: test_linked_list.py, test_hash_map.py, test_dynamic_array.py, test_min_heap.py, test_store.py, test_main.py
 ├── scripts/demo.py      # 엔터 단계형 시연 (41 TASK, 내부 상태 표시)
 └── docs/
     ├── study-note.md    # 학습 노트 (C 코드 기준)
@@ -32,7 +32,7 @@
 # Python CLI
 python3 python/main.py
 
-# Python 테스트 (30개)
+# Python 테스트 (36개)
 python3 -m unittest discover -s tests -v
 
 # 시연: 엔터로 한 단계씩 (a: 끝까지 자동, Ctrl+C: 중단) / --auto: 끝까지 자동
@@ -43,6 +43,8 @@ mkdir -p build
 gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/hashmap_test.c c-practice/HashMap.c c-practice/LinkedList.c
 gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
 ./build/store
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/dynarray c-practice/dynarray_test.c c-practice/DynamicArray.c
+./build/dynarray
 
 # C 누수 확인 (macOS는 LeakSanitizer 미지원이라 sanitizer 없이 빌드)
 gcc -Wall -Wextra -g -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
@@ -81,8 +83,9 @@ C 단계(C-1~C-4)에서 자료구조를 직접 설계·구현했고, PY 단계�
 | PY-1 | [python](python/), [tests](tests/) | 연결 리스트·해시맵·최소 힙을 독립 모듈로 포팅, 원문 이름의 클래스 메서드, unittest 확인 | 완료 (Claude 실행 확인, 사용자 미검증) |
 | PY-2 | [store.py](python/store.py), [main.py](python/main.py) | Store.c 포팅(used_memory는 원문 UTF-8 공식)과 CLI. 명령 10개, 에러 4종, 큰따옴표 값 | 완료 (Claude 실행 확인, 사용자 REPL 일부 실행) |
 | PY-3 | [python](python/), [tests](tests/) | 사용자가 전체 테스트·REPL 시나리오를 직접 확인하고 원문의 4개 학습 목표를 자기 코드로 설명 | 대기 |
+| BONUS-1 | [DynamicArray.c](c-practice/DynamicArray.c), [dynamic_array.py](python/dynamic_array.py) | 동적 배열 append/get/set/remove와 capacity 2배 확장. Python MinHeap 저장소에 적용 | 완료 (Claude 실행 확인, 사용자 미검증) |
 
-보너스 5개는 선택하지 않았습니다.
+보너스 2~5는 선택하지 않았습니다.
 
 ## 주요 설계 결정
 
@@ -90,6 +93,7 @@ C 단계(C-1~C-4)에서 자료구조를 직접 설계·구현했고, PY 단계�
 - **LRU**: Data가 LRU 노드 주소(lru_node)를 직접 가져 GET·SET 갱신과 TAIL 제거가 O(1)입니다. 해시맵은 LRU를 모르고 Store가 갱신합니다.
 - **TTL**: 밀리초 만료 시각을 최소 힙에 넣고, 꺼낼 때 해시맵의 현재 만료 시각과 같을 때만 지웁니다(lazy deletion). 모든 명령 전에 만료를 정리합니다.
 - **메모리 제한**: 단일 엔트리가 maxmemory를 넘으면 저장하지 않고 OOM을 돌려줍니다. 저장 후 초과하면 TAIL부터 제거하고 evicted_keys를 셉니다. 만료로 지운 키는 세지 않습니다.
+- **동적 배열 적용**: Python MinHeap의 저장 공간(배열·개수·2배 확장)을 DynamicArray로 옮기고 힙은 순서 규칙만 지킵니다. 해시맵 버킷 확장은 rehash가 필요해 적용하지 않았습니다. C MinHeap은 원소 타입(`HeapItem`)이 `int` 동적 배열과 달라 그대로 둡니다.
 - **Python 제약**: dict·set·collections·heapq·내장 hash()를 쓰지 않고, list는 고정 길이 배열과 인덱스 접근으로만 씁니다.
 
 설계 근거는 [WORKLOG](docs/harness/WORKLOG.md), 남은 작업은 [STATUS](docs/harness/STATUS.md)에 있습니다.
