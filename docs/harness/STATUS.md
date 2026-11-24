@@ -28,11 +28,12 @@
 
 ## In Progress
 
-- 보너스 3 이진 트리: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 C로 구현 ([BinaryTree.c](../../c-practice/BinaryTree.c): 배열 → 완전 이진 트리 build, 전위·중위·후위(재귀)·레벨(LinkedList 큐) 순회, 후위 순서 free, 확인용 [tree_test.c](../../c-practice/tree_test.c)). C++ 대신 C: std::queue 대신 직접 만든 LinkedList를 큐로 쓰기 위해.
+- 보너스 3 이진 트리: C 구현·커밋 완료(9348305). Python 포팅 대기.
+- 보너스 4 BST: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 C로 구현 ([BST.c](../../c-practice/BST.c): TreeNode·tree_inorder·tree_free 재사용, insert(중복 무시)·search(반복문)·remove(자식 0/1/2개, 2개는 오른쪽 최솟값 후계자), 확인용 [bst_test.c](../../c-practice/bst_test.c)). sanitizer 기대값 일치·leaks 0을 Claude가 확인.
 
 ## Next
 
-C 커밋 후 Python 포팅. 이후 보너스 4·5 중 선택.
+C 커밋 후 보너스 3·4 Python 포팅. 이후 보너스 5.
 
 ## Open Issues
 
