@@ -28,11 +28,11 @@
 
 ## In Progress
 
-- 보너스 2 스택/큐/덱: 원문 요구는 개념 조사·문서화뿐이라 코드 구현 없음. Claude가 [STACK_QUEUE_DEQUE.md](../STACK_QUEUE_DEQUE.md)를 작성(사용자 승인 계획). 1절 비교·복잡도 표, 2~4절은 정의 → 그림 → 연산 표(복잡도 이유) → 만드는 방법 → 쓰임, 원형 큐, 5절 지금 코드(LinkedList·DynamicArray·MinHeap·LRU)와의 대응, 6절 보너스 3·5 연결. 큰 구조 그림은 주석 자리만 둠.
+- 보너스 3 이진 트리: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 C로 구현 ([BinaryTree.c](../../c-practice/BinaryTree.c): 배열 → 완전 이진 트리 build, 전위·중위·후위(재귀)·레벨(LinkedList 큐) 순회, 후위 순서 free, 확인용 [tree_test.c](../../c-practice/tree_test.c)). C++ 대신 C: std::queue 대신 직접 만든 LinkedList를 큐로 쓰기 위해.
 
 ## Next
 
-보너스 2 문서를 사용자가 읽고 확인한 뒤 커밋. 이후 보너스 3~5 중 선택.
+C 커밋 후 Python 포팅. 이후 보너스 4·5 중 선택.
 
 ## Open Issues
 
