@@ -2,7 +2,7 @@
 
 자료구조를 직접 구현하며 Redis의 LRU·TTL·메모리 제한 동작을 배우는 CLI 프로젝트입니다. C 실습에서 연결 리스트·체이닝 해시맵·최소 힙·LRU/TTL/메모리 제한 결합을 직접 구현했고, 그 코드를 Python으로 포팅해 최종 CLI 프로그램을 완성했습니다.
 
-원문은 [MISSION.md](docs/harness/MISSION.md), 필수·보너스 완료 기준은 [REQUIREMENTS.md](docs/harness/REQUIREMENTS.md), 현재 단계는 [STATUS.md](docs/harness/STATUS.md)에 있습니다. 구현 설명은 학습 노트 [study-note.md](docs/study-note.md)에 C 코드 기준으로 정리했습니다. 진행 방식은 [CLAUDE.md](CLAUDE.md)를 따르며, [AGENTS.md](AGENTS.md)와 `docs/harness/`의 나머지 절차 문서는 Codex용 기록입니다.
+원문은 [MISSION.md](docs/harness/MISSION.md), 필수·보너스 완료 기준은 [REQUIREMENTS.md](docs/harness/REQUIREMENTS.md), 현재 단계는 [STATUS.md](docs/harness/STATUS.md)에 있습니다. 구현 설명은 학습 노트 [study-note.md](docs/study-note.md)에 C 코드 기준으로 정리했고, 기능 시연 흐름은 [demo-scenario.md](docs/demo-scenario.md)에 있습니다. 진행 방식은 [CLAUDE.md](CLAUDE.md)를 따르며, [AGENTS.md](AGENTS.md)와 `docs/harness/`의 나머지 절차 문서는 Codex용 기록입니다.
 
 ## 기본 구조와 환경
 
@@ -14,8 +14,10 @@
 ├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store (.h/.c), 확인용 hashmap_test.c, store_test.c
 ├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, min_heap.py, store.py, main.py
 ├── tests/               # unittest: test_linked_list.py, test_hash_map.py, test_min_heap.py, test_store.py, test_main.py
+├── scripts/demo.py      # 엔터 단계형 시연 (41 TASK, 내부 상태 표시)
 └── docs/
     ├── study-note.md    # 학습 노트 (C 코드 기준)
+    ├── demo-scenario.md # 시연 시나리오 흐름과 화면 읽는 법
     └── harness/         # 원문·요구사항·상태·이력·템플릿
 ```
 
@@ -32,6 +34,9 @@ python3 python/main.py
 
 # Python 테스트 (30개)
 python3 -m unittest discover -s tests -v
+
+# 시연: 엔터로 한 단계씩 (a: 끝까지 자동, Ctrl+C: 중단) / --auto: 끝까지 자동
+python3 scripts/demo.py
 
 # C 확인용 main (sanitizer)
 mkdir -p build
