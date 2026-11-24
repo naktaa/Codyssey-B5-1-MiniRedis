@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-24: PY-1·PY-2 Python 포팅 완료(Claude unittest 30개·REPL 실행 확인, 사용자 REPL 일부 실행).
+2026-11-24: PY-1·PY-2 Python 포팅 완료(Claude unittest 30개·REPL 실행 확인, 사용자 REPL 일부 실행). C 코드 기준 학습 노트 작성.
 
 ## Completed
 
@@ -22,6 +22,7 @@
 - 2026-11-23 C-4 TTL: STORE_ERR_ALLOC을 -2로, hashmap_put의 새 Data를 calloc으로 변경(사용자 요청으로 Claude 수정). expire_if_needed(힙 peek/pop + 해시맵 expire_at 일치 시만 삭제)·store_expire·store_ttl은 Claude가 보여 준 코드를 사용자가 작성. set/get/del 명령 전 만료 정리, SET 덮어쓰기 TTL 초기화, store_free 힙 해제는 사용자 요청으로 Claude 구현. store_test.c TTL 구간(내림, 오래된 힙 항목, DEL 후 재SET, 덮어쓰기, EXPIRE 0, 만료 GET의 LRU 미갱신, evicted 미집계)을 Claude가 sanitizer 빌드로 실행해 기대값 일치, leaks 0 확인. 사용자도 실행 확인. 설계 근거는 WORKLOG "C-4 TTL 설계 결정".
 - 2026-11-24 PY-1: 사용자 요청으로 Claude가 C 연결 리스트·해시맵·최소 힙을 [linked_list.py](../../python/linked_list.py)·[hash_map.py](../../python/hash_map.py)·[min_heap.py](../../python/min_heap.py)로 로직 그대로 포팅. 사용자 결정으로 C식 모듈 함수 대신 원문 이름의 클래스 메서드(put/get/remove/contains/keys/size, push/pop/peek/size, _heapify_up/down)로 작성. 언어 차이: free·할당 실패 분기 제거, out 파라미터→반환값(None), keys()는 출력 대신 count 길이 배열 반환, 힙 개수 필드는 size() 메서드와 겹쳐 count. 해시는 UTF-8 바이트·64비트 마스킹으로 C hashmap_hash와 같은 값임을 Claude가 C 실행 결과와 비교 확인. remove_front·remove_back 단독 호출은 test_linked_list.py로 확인.
 - 2026-11-24 PY-2: 사용자 요청으로 Claude가 Store.c를 [store.py](../../python/store.py)로 포팅(entry_size만 미션 공식 len(utf8(key))+len(utf8(value))로 변경, STORE_ERR_ALLOC 제거, del→delete). CLI 명령용으로 C에 없던 exists·dbsize·keys·info_memory 추가(모두 만료 정리 후 조회). [main.py](../../python/main.py) REPL 새로 작성: 명령 10개, 미션 원문 에러 문구 4종, 큰따옴표 값, KEYS는 원문 예시의 `1. "key"` 형식, 출력은 실제 Redis가 아닌 미션 원문 기준. tests/ unittest 30개(C hashmap_test·store_test 시나리오, 미션 8절 예시·에러 예시 포함)를 Claude가 실행해 모두 통과, 미션 예시 REPL 출력 일치 확인. 사용자는 REPL에서 SET 2개 실행 확인(전체 테스트는 미실행).
+- 2026-11-24 학습 노트: 사용자 요청으로 Claude가 [study-note.md](../study-note.md)를 사용자가 작성한 C 코드 기준으로 작성(자료구조 3개·Store 결합·Q1~Q8·C→Python 포팅 표·부록). 그림 1(images/store-structure.png)은 자리와 메모만 두었고 이미지는 사용자가 넣음. 코드 링크는 레포 루트 절대 경로 + 시작 줄 앵커(`#L138`) 형식으로 정하고, 미리보기 클릭 시 새 탭·IntelliSense 꺼짐이 없음을 사용자가 확인. 이 규칙을 [CLAUDE.md](../../CLAUDE.md) "문서의 코드 링크"와 [LEARNING_TEMPLATE.md](learning/LEARNING_TEMPLATE.md)에 반영.
 
 ## In Progress
 
@@ -34,7 +35,8 @@
 ## Open Issues
 
 - 사용자의 전체 unittest·REPL 시나리오 직접 실행은 미확인.
-- README 실행 방법·단계 표 상태는 PY-1 이전 내용 그대로. 보너스 5개 모두 미선택.
+- 보너스 5개 모두 미선택.
+- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(Python test_min_heap.py로만 확인 가능). 학습 노트 그림 1 이미지 미작성.
 
 ## Recent Decisions
 

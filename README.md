@@ -1,50 +1,90 @@
 # Mini Redis
 
-자료구조를 직접 구현하며 Redis의 LRU·TTL·메모리 제한 동작을 배우는 CLI 프로젝트입니다. C 실습을 먼저 진행하고, 직접 만든 알고리즘을 Python으로 포팅해 최종 프로그램을 완성합니다. C 실습(연결 리스트·체이닝 해시맵·최소 힙·LRU/TTL/메모리 제한 결합)을 완료했고, 자료구조를 Python으로 포팅하는 PY-1 단계입니다.
+자료구조를 직접 구현하며 Redis의 LRU·TTL·메모리 제한 동작을 배우는 CLI 프로젝트입니다. C 실습에서 연결 리스트·체이닝 해시맵·최소 힙·LRU/TTL/메모리 제한 결합을 직접 구현했고, 그 코드를 Python으로 포팅해 최종 CLI 프로그램을 완성했습니다.
 
-원문은 [MISSION.md](docs/harness/MISSION.md), 필수·보너스 완료 기준은 [REQUIREMENTS.md](docs/harness/REQUIREMENTS.md), 현재 단계는 [STATUS.md](docs/harness/STATUS.md)에 있습니다. [AGENTS.md](AGENTS.md)에 따라 사용자가 설계·구현·테스트·디버깅하고 PM은 같은 세션에서 질문과 학습을 돕습니다. 자동 위임·자동 리뷰·별도 평가는 하지 않습니다.
+원문은 [MISSION.md](docs/harness/MISSION.md), 필수·보너스 완료 기준은 [REQUIREMENTS.md](docs/harness/REQUIREMENTS.md), 현재 단계는 [STATUS.md](docs/harness/STATUS.md)에 있습니다. 구현 설명은 학습 노트 [study-note.md](docs/study-note.md)에 C 코드 기준으로 정리했습니다. 진행 방식은 [CLAUDE.md](CLAUDE.md)를 따르며, [AGENTS.md](AGENTS.md)와 `docs/harness/`의 나머지 절차 문서는 Codex용 기록입니다.
 
 ## 기본 구조와 환경
 
 ```text
 .
-├── AGENTS.md
+├── CLAUDE.md            # Claude Code 진행 지침
+├── AGENTS.md            # Codex용 기록
 ├── README.md
-├── .editorconfig
-├── .gitignore
-├── c-practice/          # LinkedList.h/.c, HashMap.c, MinHeap.h/.c 실습
-├── python/             # Python 최종 Mini Redis (현재 .gitkeep만 존재)
-├── tests/              # 사용자 작성 테스트 (현재 .gitkeep만 존재)
-└── docs/harness/        # 기존 지침·원문·요구사항·상태·이력·템플릿
+├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store (.h/.c), 확인용 hashmap_test.c, store_test.c
+├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, min_heap.py, store.py, main.py
+├── tests/               # unittest: test_linked_list.py, test_hash_map.py, test_min_heap.py, test_store.py, test_main.py
+└── docs/
+    ├── study-note.md    # 학습 노트 (C 코드 기준)
+    └── harness/         # 원문·요구사항·상태·이력·템플릿
 ```
 
-- 최종 환경: Python 3.8 이상. C 실습에는 C 컴파일러가 필요하며 C++는 사용하지 않습니다.
-- 각 자료구조는 사용자가 독립 모듈/파일로 분리합니다. 세부 파일명·C 표준·빌드 명령·테스트 방식은 아직 결정하지 않았습니다.
-- 외부 dependency·패키징·CI·자동 실행 설정은 추가하지 않았습니다. 컴파일·프로그램 실행·테스트·도구 설치는 수행하지 않았습니다.
-- 생성물은 루트 `build/`에 두는 기본 정리 방식을 설정했습니다. C 실습은 [LinkedList.h](c-practice/LinkedList.h)·[LinkedList.c](c-practice/LinkedList.c)·[HashMap.c](c-practice/HashMap.c)·[MinHeap.h](c-practice/MinHeap.h)·[MinHeap.c](c-practice/MinHeap.c)에 있습니다. 해시맵은 레포 루트에서 `gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/HashMap.c c-practice/LinkedList.c`로 빌드합니다.
+- 최종 환경: Python 3.8 이상, 외부 dependency 없음. C 실습에는 C 컴파일러가 필요하며 C++는 사용하지 않습니다.
+- 빌드 생성물은 루트 `build/`에 둡니다(git 추적 안 함).
+
+## 실행과 테스트
+
+레포 루트에서 실행합니다.
+
+```bash
+# Python CLI
+python3 python/main.py
+
+# Python 테스트 (30개)
+python3 -m unittest discover -s tests -v
+
+# C 확인용 main (sanitizer)
+mkdir -p build
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/hashmap_test.c c-practice/HashMap.c c-practice/LinkedList.c
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
+./build/store
+
+# C 누수 확인 (macOS는 LeakSanitizer 미지원이라 sanitizer 없이 빌드)
+gcc -Wall -Wextra -g -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
+leaks --atExit -- ./build/store
+```
+
+지원 명령: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` · `exit`/`quit`. 출력과 에러 문구는 실제 Redis가 아니라 미션 원문 기준입니다(예: `KEYS` 출력은 `1. "key"`).
+
+```text
+mini-redis> CONFIG SET maxmemory 30
+OK
+mini-redis> SET user:1 "Alice"
+OK
+mini-redis> SET user:2 "Bob"
+OK
+mini-redis> SET user:3 "Charlie"
+OK
+mini-redis> GET user:1
+(nil)
+mini-redis> INFO memory
+used_memory:22
+maxmemory:30
+evicted_keys:1
+```
 
 ## 단계별 학습 계획
 
-학습의 중심은 C 단계(C-1~C-4)에서 자료구조를 직접 설계·구현하는 것이며, 요구사항 확인 → 사용자 설계 → 사용자 구현 → 사용자 테스트 → 요청 시 리뷰 순서입니다. PY 단계는 새로 설계하지 않고 사용자가 작성한 C 코드를 구조·이름·로직 그대로 Python으로 포팅해 미션 최종 결과물을 만듭니다. 언어 차이로 꼭 필요한 부분만 바꾸고, C에 없던 CLI(명령 파싱·출력)만 새로 작성합니다. 완료 결과와 이해한 내용을 공유한 뒤 사용자의 의사에 따라 다음 단계로 진행합니다. 아래는 목표와 관찰할 기준이며 세부 설계·구현 해법을 정하지 않습니다.
+C 단계(C-1~C-4)에서 자료구조를 직접 설계·구현했고, PY 단계는 그 C 코드를 구조·로직 그대로 Python으로 옮겼습니다. 언어 차이로 꼭 필요한 부분과 C에 없던 CLI(명령 파싱·출력)만 새로 작성했습니다.
 
 | 단계 | 위치 | 목표·완료 기준 | 상태 |
 | --- | --- | --- | --- |
-| C-1 | [c-practice](c-practice/) | 이중 연결 리스트: 원문의 6개 연산, 삽입/삭제/이동 O(1), 빈/단일/복수 노드에서 연결·수명·해제를 사용자 테스트로 확인·설명 | 완료 (remove_front·remove_back 단독 호출 미확인) |
-| C-2 | [HashMap.c](c-practice/HashMap.c) | 직접 해시 함수와 체이닝 해시맵: 원문의 6개 연산, 충돌 처리, 로드 팩터 0.75 초과 시 버킷 2배 확장 후 기존 항목 보존 확인·설명 | 완료 (사용자 실행 확인) |
-| C-3 | [MinHeap.h](c-practice/MinHeap.h)·[MinHeap.c](c-practice/MinHeap.c) | 최소 힙: push/pop/peek/size와 상·하향 정렬, 만료 시간·키 요소 지원 및 최소값 순서 확인·설명 | 완료 (사용자 실행 확인) |
-| C-4 | [c-practice](c-practice/) | 기존 자료구조에 LRU·TTL·메모리 제한 결합: 갱신·삭제·만료·제거 시 일관성, 사용량·제거 횟수와 메모리 해제 확인·설명. C 전체 CLI는 요구하지 않음 | 완료 (사용자 실행 확인) |
-| PY-1 | [python](python/), [tests](tests/) | C의 연결 리스트·체이닝 해시맵·최소 힙 코드를 그대로 독립 모듈(`linked_list.py`·`hash_map.py`·`min_heap.py`)로 포팅하고 기존 성질·연산·제약을 `tests/`의 unittest로 확인 | 진행 중 |
-| PY-2 | [python](python/) | `store.py`(Store.c 그대로 포팅)와 `main.py`(새로 작성하는 CLI). String 6개·메모리 2개·TTL 2개 명령을 LRU/TTL/메모리 관리와 결합해 REQ-004~007 동작 확인 | 대기 |
-| PY-3 | [python](python/), [tests](tests/) | REPL·오류·값 파싱과 통합 테스트: 모든 필수 기준·경계 동작을 실제 입력/출력으로 확인하고 원문의 4개 학습 목표를 자기 코드로 설명 | 대기 |
+| C-1 | [LinkedList.c](c-practice/LinkedList.c) | 이중 연결 리스트: 원문의 6개 연산, 삽입/삭제/이동 O(1), 연결·수명·해제 | 완료 (remove_front·remove_back 단독 호출은 Python 테스트로 확인) |
+| C-2 | [HashMap.c](c-practice/HashMap.c) | 직접 해시 함수와 체이닝 해시맵: 원문의 6개 연산, 충돌 처리, 로드 팩터 0.75 초과 시 2배 확장 | 완료 (사용자 실행 확인) |
+| C-3 | [MinHeap.c](c-practice/MinHeap.c) | 최소 힙: push/pop/peek/size와 상·하향 정렬, (expire_at, key) 요소 | 완료 (사용자 실행 확인) |
+| C-4 | [Store.c](c-practice/Store.c) | LRU·TTL·메모리 제한 결합: 갱신·삭제·만료·제거 시 일관성, used_memory·evicted_keys, 메모리 해제 | 완료 (사용자 실행 확인, leaks 0) |
+| PY-1 | [python](python/), [tests](tests/) | 연결 리스트·해시맵·최소 힙을 독립 모듈로 포팅, 원문 이름의 클래스 메서드, unittest 확인 | 완료 (Claude 실행 확인, 사용자 미검증) |
+| PY-2 | [store.py](python/store.py), [main.py](python/main.py) | Store.c 포팅(used_memory는 원문 UTF-8 공식)과 CLI. 명령 10개, 에러 4종, 큰따옴표 값 | 완료 (Claude 실행 확인, 사용자 REPL 일부 실행) |
+| PY-3 | [python](python/), [tests](tests/) | 사용자가 전체 테스트·REPL 시나리오를 직접 확인하고 원문의 4개 학습 목표를 자기 코드로 설명 | 대기 |
 
-동적 배열 등 보너스 5개는 필수 완료 후 사용자 선택으로만 진행하며 이 계획의 선행 조건으로 넣지 않습니다.
+보너스 5개는 선택하지 않았습니다.
 
-## 사용자가 정할 주요 항목
+## 주요 설계 결정
 
-- C 노드·문자열의 소유권과 수명, 할당 실패 처리, API·파일명·빌드/테스트 방식.
-- 해시 함수·초기 버킷 수·체이닝 표현, 최소 힙 저장소·확장 방식. 동적 배열 직접 구현 보너스의 채택 여부는 별개입니다.
-- 자료구조 간 참조와 삭제 책임, LRU 갱신 범위, TTL 갱신·초기화·삭제 후 힙 엔트리 처리 방식.
-- 시간 측정·남은 초의 표현, DBSIZE/KEYS 등 전체 조회 시 만료 정리 범위, 메모리 제한 변경 시 초과분 처리 시점과 OOM 시 기존 값 보존 정책. 원문에 명시된 동작을 우선하고 미명시 사항은 결정 근거를 남깁니다.
-- Python 배열 수준 저장소의 허용 범위와 값 파싱 방식(원문의 최소 기준 중 선택). 핵심 자료구조를 dict/set/collections/heapq로 대체하지 않습니다.
+- **소유권**: Node는 리스트가, Data와 key 문자열은 해시맵이 해제합니다. 힙은 key를 복사해 소유하고, pop한 key는 호출한 쪽이 해제합니다.
+- **LRU**: Data가 LRU 노드 주소(lru_node)를 직접 가져 GET·SET 갱신과 TAIL 제거가 O(1)입니다. 해시맵은 LRU를 모르고 Store가 갱신합니다.
+- **TTL**: 밀리초 만료 시각을 최소 힙에 넣고, 꺼낼 때 해시맵의 현재 만료 시각과 같을 때만 지웁니다(lazy deletion). 모든 명령 전에 만료를 정리합니다.
+- **메모리 제한**: 단일 엔트리가 maxmemory를 넘으면 저장하지 않고 OOM을 돌려줍니다. 저장 후 초과하면 TAIL부터 제거하고 evicted_keys를 셉니다. 만료로 지운 키는 세지 않습니다.
+- **Python 제약**: dict·set·collections·heapq·내장 hash()를 쓰지 않고, list는 고정 길이 배열과 인덱스 접근으로만 씁니다.
 
-C-2는 [LinkedList.h](c-practice/LinkedList.h)·[LinkedList.c](c-practice/LinkedList.c)의 범용 리스트를 재사용해 완료했습니다. C-3 최소 힙은 밀리초 `long long` 만료 시각, 힙이 복사해 소유하는 key, 2배 동적 확장으로 설계했으며 결정 근거는 [WORKLOG](docs/harness/WORKLOG.md)에 있습니다. 남은 작업은 [STATUS](docs/harness/STATUS.md)에 기록합니다.
+설계 근거는 [WORKLOG](docs/harness/WORKLOG.md), 남은 작업은 [STATUS](docs/harness/STATUS.md)에 있습니다.
