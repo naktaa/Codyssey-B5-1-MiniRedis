@@ -34,7 +34,9 @@
 
 ### 3.1 LinkedList
 
-**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7))
+Python: [linked_list.py](/python/linked_list.py)
+
+**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L8-25](/python/linked_list.py#L8))
 
 ```text
 HEAD -> [A] <-> [B] <- TAIL
@@ -56,7 +58,7 @@ Node는 prev·next·data 세 필드만 가지고, LinkedList는 HEAD·TAIL 두 �
 | `remove_node(list, now)` | 양 끝은 위 두 함수에 맡기고, 중간은 이웃을 이은 뒤 free | [L64-76](/c-practice/LinkedList.c#L64) |
 | `move_to_front(list, now)` | 떼어서 맨 앞으로 옮김. free하지 않음 | [L78-95](/c-practice/LinkedList.c#L78) |
 
-#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6))
+#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L27-35](/python/linked_list.py#L27))
 
 새 노드 N의 prev·next를 정하고, 기존 HEAD와 리스트의 HEAD를 N으로 바꿉니다.
 
@@ -68,7 +70,7 @@ changed: N.prev = NULL, N.next = A, A.prev = N, HEAD = N
 
 빈 리스트면 HEAD와 TAIL이 모두 N이 됩니다. insert_back은 방향만 반대입니다.
 
-#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64))
+#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L69-77](/python/linked_list.py#L69))
 
 중간 노드는 앞뒤 이웃을 서로 이은 뒤 free합니다.
 
@@ -80,7 +82,7 @@ changed: A.next = C (now->prev->next = now->next), C.prev = A (now->next->prev =
 
 now가 HEAD나 TAIL이면 remove_front·remove_back을 불러, HEAD·TAIL 갱신 코드를 한 곳에만 둡니다.
 
-#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78))
+#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L79-92](/python/linked_list.py#L79))
 
 노드를 새로 만들거나 free하지 않고 연결만 바꿔 맨 앞으로 옮깁니다.
 
@@ -121,7 +123,9 @@ now가 TAIL이면 뒤 이웃이 없으므로 TAIL만 앞으로 당깁니다. 노
 
 ### 3.2 HashMap
 
-**구조** ([HashMap.h](/c-practice/HashMap.h) [L8-20](/c-practice/HashMap.h#L8))
+Python: [hash_map.py](/python/hash_map.py)
+
+**구조** ([HashMap.h](/c-practice/HashMap.h) [L8-20](/c-practice/HashMap.h#L8) · [hash_map.py](/python/hash_map.py) [L14-31](/python/hash_map.py#L14))
 
 ```text
 buckets (capacity = 4, count = 3)
@@ -159,7 +163,7 @@ sum = 97 * 31 + 98 = 3105
 bucket = 3105 % capacity(4) = 1
 ```
 
-#### 확장 ([HashMap.c](/c-practice/HashMap.c) [L96-123](/c-practice/HashMap.c#L96))
+#### 확장 ([HashMap.c](/c-practice/HashMap.c) [L96-123](/c-practice/HashMap.c#L96) · [hash_map.py](/python/hash_map.py) [L74-93](/python/hash_map.py#L74))
 
 count * 4 > capacity * 3이 되면 버킷을 2배로 늘리고 모든 노드를 새 번호로 옮깁니다.
 
@@ -216,7 +220,9 @@ after (capacity 8)
 
 ### 3.3 MinHeap
 
-**구조** ([MinHeap.h](/c-practice/MinHeap.h) [L9-18](/c-practice/MinHeap.h#L9))
+Python: [min_heap.py](/python/min_heap.py)
+
+**구조** ([MinHeap.h](/c-practice/MinHeap.h) [L9-18](/c-practice/MinHeap.h#L9) · [min_heap.py](/python/min_heap.py) [L12-25](/python/min_heap.py#L12))
 
 ```text
 items (array)   idx:   0    1    2    3
@@ -244,7 +250,7 @@ parent = (i - 1) / 2,  left = 2i + 1,  right = 2i + 2
 | `minheap_size(heap)` | 저장된 항목 개수 | [L156-158](/c-practice/MinHeap.c#L156) |
 | `minheap_free(heap)` | 남은 항목의 key를 모두 free한 뒤 배열 free | [L86-91](/c-practice/MinHeap.c#L86) |
 
-#### push → _heapify_up ([MinHeap.c](/c-practice/MinHeap.c) [L25-35](/c-practice/MinHeap.c#L25))
+#### push → _heapify_up ([MinHeap.c](/c-practice/MinHeap.c) [L25-35](/c-practice/MinHeap.c#L25) · [min_heap.py](/python/min_heap.py) [L27-37](/python/min_heap.py#L27))
 
 배열 끝에 넣고, 부모보다 작으면 자리를 바꾸며 올라갑니다.
 
@@ -257,7 +263,7 @@ push 10 at idx 3: [30] [50] [40] [10]
 
 i가 size_t라 0에서 1을 빼면 아주 큰 수가 되므로, `while (i > 0)`으로 먼저 확인한 뒤 부모 인덱스를 계산합니다.
 
-#### pop → _heapify_down ([MinHeap.c](/c-practice/MinHeap.c) [L43-62](/c-practice/MinHeap.c#L43))
+#### pop → _heapify_down ([MinHeap.c](/c-practice/MinHeap.c) [L43-62](/c-practice/MinHeap.c#L43) · [min_heap.py](/python/min_heap.py) [L39-56](/python/min_heap.py#L39))
 
 items[0]을 넘기고, 마지막 항목을 0번으로 옮긴 뒤 더 작은 자식과 바꾸며 내려갑니다.
 
@@ -299,9 +305,13 @@ idx 1 has no child (2*1+1 = 3 >= size): stop
 
 ## 4. Store: 자료구조를 묶는 방법
 
+Python: [store.py](/python/store.py)
+
 [Store.h](/c-practice/Store.h)의 `Store` 구조체가 세 자료구조와 used_memory·maxmemory·evicted_keys를 가집니다. 모든 store 함수는 맨 앞에서 expire_if_needed를 부르고, 해시맵은 LRU·TTL을 모르며 그 갱신은 모두 Store.c가 합니다.
 
 ### 4.1 LRU (map + list)
+
+Python: [store.py](/python/store.py) set [L85-117](/python/store.py#L85) · get [L119-128](/python/store.py#L119)
 
 ```text
 map.buckets[i]:  HEAD -> [k] <- TAIL
@@ -352,6 +362,8 @@ LRU Node 할당이 실패하면 방금 넣은 키를 hashmap_remove로 되돌려
 
 ### 4.2 TTL (heap + lazy deletion)
 
+Python: [store.py](/python/store.py) expire [L142-159](/python/store.py#L142) · ttl [L161-172](/python/store.py#L161)
+
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
 | `store_expire` | 없으면 0, 0 이하면 delete_data, 아니면 힙에 push하고 expire_at 기록 | [L192-209](/c-practice/Store.c#L192) |
@@ -361,7 +373,7 @@ LRU Node 할당이 실패하면 방금 넣은 키를 hashmap_remove로 되돌려
 
 store_expire는 힙 push를 먼저 하고 성공했을 때만 expire_at을 바꾸므로, push가 실패하면 이전 TTL이 그대로 남습니다. -2·-1도 Redis 응답 값이라, 반환값이 아니라 out_ttl로 넘기고 반환값은 성공·에러만 나타냅니다.
 
-**만료 정리** ([Store.c](/c-practice/Store.c) [L70-90](/c-practice/Store.c#L70))
+**만료 정리** ([Store.c](/c-practice/Store.c) [L70-90](/c-practice/Store.c#L70) · [store.py](/python/store.py) [L65-83](/python/store.py#L65))
 
 ```c
     while (1) {
@@ -404,6 +416,8 @@ SET으로 덮어쓰면 expire_at이 NO_EXPIRE가 되므로, 힙에 남은 예전
 
 ### 4.3 메모리 제한과 TAIL 제거
 
+Python: [store.py](/python/store.py) _entry_size [L45-48](/python/store.py#L45) · _delete_data [L50-57](/python/store.py#L50) · set [L85-117](/python/store.py#L85)
+
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
 | `entry_size(key, value)` | `strlen(key)` + value의 10진수 자릿수 | [L32-34](/c-practice/Store.c#L32) |
@@ -412,7 +426,7 @@ SET으로 덮어쓰면 expire_at이 NO_EXPIRE가 되므로, 힙에 남은 예전
 
 C는 value가 int라 크기를 자릿수로 대신하고(-5 → 2), Python은 미션 공식대로 value 문자열의 UTF-8 바이트 수를 씁니다. delete_data는 DEL·EXPIRE 0·TTL 만료·LRU 제거가 함께 쓰므로 used_memory 감소가 이 한 곳에만 있습니다. hashmap_remove가 data와 key를 free하므로 그 호출이 마지막이고, 그 뒤에는 data를 읽지 않습니다.
 
-**TAIL부터 제거** ([Store.c](/c-practice/Store.c) [L56-61](/c-practice/Store.c#L56))
+**TAIL부터 제거** ([Store.c](/c-practice/Store.c) [L56-61](/c-practice/Store.c#L56) · [store.py](/python/store.py) [L59-63](/python/store.py#L59))
 
 ```c
     while (store->maxmemory > 0 && store->used_memory > store->maxmemory && store->lru.TAIL != NULL) {
