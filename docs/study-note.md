@@ -15,12 +15,7 @@
 
 흐름: 확인용 main([store_test.c](/c-practice/store_test.c)) → `store_*` 함수([Store.c](/c-practice/Store.c)) → HashMap.c · LinkedList.c · MinHeap.c. CLI는 Python([main.py](/python/main.py))에만 있습니다.
 
-![Store 자료구조 관계](images/store-structure.png)
-> 그림 메모: `Store` 구조체가 `map`(`HashMap`), `lru`(`LinkedList`), `heap`(`MinHeap`)을 값으로 가진다.
-> `map.buckets`는 `LinkedList` 배열이고, 버킷 `Node.data`(`void*`)가 `Data { key, value, lru_node, expire_at }`를 가리킨다.
-> `Data.lru_node` → `lru`의 `Node`, 그 `Node.data` → 같은 `Data` (양방향 화살표로 강조). `lru.HEAD` = 최근, `lru.TAIL` = 가장 오래됨.
-> `heap.items[]`의 `HeapItem { expire_at, key }`는 포인터 없이 자기 key 복사본으로만 `Data`를 찾는다(점선 화살표).
-> 같은 `Data`를 버킷 `Node`와 LRU `Node` 두 개가 가리키고, `Data`를 해제하는 쪽은 해시맵뿐이라는 점을 강조.
+![Store 자료구조 관계](/images/store-structure.svg)
 
 | 구성 요소 | 자료구조 | 하는 일 | 소유(해제 책임) |
 | --- | --- | --- | --- |
@@ -483,6 +478,8 @@ store_test의 기대값(LRU `c a`, used 8, evicted 1)과 같습니다. 미션 8�
 | 기타 변경 | store_del, 힙 size 필드, keys 출력, `/`, init·free 함수 | delete, 힙 count 필드, keys 배열 반환, `//`, `__init__`. Store에 exists·dbsize·keys·info_memory 추가 | 예약어·이름 충돌, 정수 나눗셈, CLI 출력 분리 |
 
 ## 6. 기능 정리 (부록)
+
+![명령 처리 흐름](/images/pipeline.svg)
 
 | 명령 | 하는 일 | 쓰는 자료구조 연산 (C 함수) |
 | --- | --- | --- |

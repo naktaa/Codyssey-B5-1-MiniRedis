@@ -43,7 +43,7 @@
 
 ## Open Issues
 
-- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(store_test와 시연 시나리오의 TTL 동작으로만 간접 확인). 학습 노트 그림 1 이미지(docs/images/store-structure.png) 미작성.
+- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(store_test와 시연 시나리오의 TTL 동작으로만 간접 확인).
 
 ## Recent Decisions
 
