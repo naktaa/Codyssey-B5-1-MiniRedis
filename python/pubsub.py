@@ -22,6 +22,8 @@ class Message:
 
 
 class PubSub:
+    """구독한 채널 집합(HashMap)과 받은 메시지 큐(LinkedList). 구독자는 REPL 하나다."""
+
     def __init__(self):
         self.channels = HashMap(INITIAL_CAPACITY)
         self.inbox = LinkedList()  # HEAD = 먼저 온 메시지

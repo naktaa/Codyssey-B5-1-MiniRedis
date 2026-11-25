@@ -3,13 +3,13 @@
 ## 1. 한눈에 보기
 
 - **목적**: 내장 컬렉션 없이 직접 만든 자료구조로 Redis의 LRU 제거·TTL 만료·메모리 제한을 구현합니다.
-- **기능**: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` (+ `exit`/`quit`)
-- **결과**: C 확인용 main은 sanitizer 빌드로 사용자 실행 확인, leaks 0. Python 시연 시나리오([demo.py](/scripts/demo.py) TASK 41개)는 Claude 실행 통과 · 사용자 **미검증**. 대표 출력(store_test): `used=8 evicted=1 (기대: 8, 1)`
+- **기능**: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` (+ `exit`/`quit`) · 보너스 `SUBSCRIBE` `PUBLISH`
+- **결과**: C 확인용 main은 sanitizer 빌드로 사용자 실행 확인, leaks 0. Python 시연 시나리오([demo.py](/scripts/demo.py) TASK 52개)는 Claude 실행 통과 · 사용자 **미검증**. 대표 출력(store_test): `used=8 evicted=1 (기대: 8, 1)`
 - **관련 파일**
   - C: [LinkedList.c](/c-practice/LinkedList.c) · [HashMap.c](/c-practice/HashMap.c) · [MinHeap.c](/c-practice/MinHeap.c) · [Store.c](/c-practice/Store.c) · 헤더 [LinkedList.h](/c-practice/LinkedList.h) [HashMap.h](/c-practice/HashMap.h) [MinHeap.h](/c-practice/MinHeap.h) [Store.h](/c-practice/Store.h) · 확인용 [hashmap_test.c](/c-practice/hashmap_test.c) [store_test.c](/c-practice/store_test.c)
   - Python: [python/](/python/) · 시연 [demo.py](/scripts/demo.py)
 
-구현 설명은 직접 작성한 C 코드 기준이고, Python과의 차이는 5절에 모았습니다.
+구현 설명은 직접 작성한 C 코드 기준이고, Python과의 차이는 5절, 보너스는 7절에 모았습니다.
 
 ## 2. 구조
 
@@ -511,7 +511,7 @@ leaks --atExit -- ./build/store
 ```bash
 python3 scripts/demo.py --auto
 ```
-→ 마지막 줄 `결과: 41 / 41 통과`
+→ 마지막 줄 `결과: 52 / 52 통과`
 
 ```bash
 python3 python/main.py
@@ -536,3 +536,37 @@ python3 python/main.py
 - 만료는 명령이 들어올 때만 정리하며, 백그라운드 정리는 없습니다.
 - 같은 키에 EXPIRE를 반복하면 오래된 힙 항목이 만료 시각까지 남아 힙 크기 m이 커집니다.
 - 해시맵과 힙은 늘어나기만 하고 줄어들지 않습니다.
+
+## 7. 보너스 (부록)
+
+필수 자료구조를 다시 쓰는 방향으로 구현했습니다. 보너스 3·4는 원문대로 독립 구현이라 Mini Redis 명령에는 쓰지 않습니다.
+
+| 보너스 | 파일 | 핵심 | 필수 자료구조와의 연결 |
+| --- | --- | --- | --- |
+| 1 동적 배열 | [DynamicArray.c](/c-practice/DynamicArray.c) · [dynamic_array.py](/python/dynamic_array.py) | 가득 차면 capacity 2배, remove는 뒤 원소를 당겨 순서 유지 O(n) | Python MinHeap 저장소로 사용. pop은 끝 칸 remove라 당길 원소가 없음 ([L75](/python/min_heap.py#L75)) |
+| 2 스택/큐/덱 | [STACK_QUEUE_DEQUE.md](/docs/STACK_QUEUE_DEQUE.md) | LinkedList 양 끝 연산 = 덱, 한쪽만 쓰면 스택, 뒤로 넣고 앞에서 빼면 큐 | LRU는 덱 + 중간 이동(move_to_front) |
+| 3 이진 트리 | [BinaryTree.c](/c-practice/BinaryTree.c) · [binary_tree.py](/python/binary_tree.py) | 배열 i번의 자식 = 2i+1, 2i+2. 순회 4종 | 힙과 같은 인덱스 규칙. 레벨 순회 큐는 LinkedList ([L103-106](/c-practice/BinaryTree.c#L103)) |
+| 4 BST | [BST.c](/c-practice/BST.c) · [bst.py](/python/bst.py) | 왼쪽 < 노드 < 오른쪽. 자식 2개 삭제는 오른쪽 최솟값(후계자)으로 대체 | 중위 순회 = 정렬. 정렬된 값을 넣으면 한쪽으로 치우쳐 연결 리스트처럼 O(n) |
+| 5 Pub/Sub | [PubSub.c](/c-practice/PubSub.c) · [pubsub.py](/python/pubsub.py) | SUBSCRIBE는 채널 수, PUBLISH는 받은 구독자 수(1/0) | 구독 채널 = HashMap을 키 집합으로, 받은 메시지 = LinkedList 큐 |
+
+> **Q9. Pub/Sub에서 중복 구독을 따로 검사하지 않아도 채널 수가 늘지 않는 이유는?**
+> hashmap_put은 이미 있는 키면 값만 바꾸고 count를 늘리지 않습니다. 그래서 `pubsub_subscribe`는 put 뒤에 `hashmap_size`만 돌려주면 됩니다. ([PubSub.c](/c-practice/PubSub.c) [L7-13](/c-practice/PubSub.c#L7))
+
+> **Q10. 실제 Redis Pub/Sub과 무엇이 다른가?**
+> 실제 Redis는 구독자와 발행자가 다른 클라이언트이고, 구독 중인 클라이언트는 일반 명령을 쓸 수 없습니다. 미션은 서버를 만들지 않으므로 REPL 하나가 구독자를 겸하고, 받은 메시지를 발행 결과 바로 뒤에 Redis 형식 3줄로 보여 줍니다. 메시지는 키가 아니라 used_memory·DBSIZE·KEYS에 들어가지 않습니다. ([main.py](/python/main.py) [L66-74](/python/main.py#L66))
+
+<details>
+<summary>보너스 확인 방법</summary>
+
+```bash
+mkdir -p build
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/dynarray c-practice/dynarray_test.c c-practice/DynamicArray.c && ./build/dynarray
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/tree c-practice/tree_test.c c-practice/BinaryTree.c c-practice/LinkedList.c && ./build/tree
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/bst c-practice/bst_test.c c-practice/BST.c c-practice/BinaryTree.c c-practice/LinkedList.c && ./build/bst
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/pubsub c-practice/pubsub_test.c c-practice/PubSub.c c-practice/HashMap.c c-practice/LinkedList.c && ./build/pubsub
+```
+→ 모든 줄의 값이 `(기대: ...)`와 같고 sanitizer 오류가 없음 (Claude 확인, leaks 0. 사용자 미검증)
+
+Python Pub/Sub은 `python3 scripts/demo.py`의 시나리오 4(TASK-038~048)로 확인합니다.
+
+</details>

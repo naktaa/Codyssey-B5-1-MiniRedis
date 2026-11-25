@@ -1,19 +1,19 @@
 # Requirements
 
-기준은 첨부 원문을 그대로 보존한 [MISSION.md](MISSION.md)입니다. 아래 내용은 완료 기준의 해석이며 원문을 대체하지 않습니다. C 이중 연결 리스트는 구현·정적 검토 후 사용자 실행 검증 대기이며, Python 최종 기능은 모두 미구현입니다. 단계 순서는 [README.md](../../README.md), 상태는 [STATUS.md](STATUS.md)에서 관리합니다.
+기준은 첨부 원문을 그대로 보존한 [MISSION.md](MISSION.md)입니다. 아래 내용은 완료 기준의 해석이며 원문을 대체하지 않습니다. 2026-11-25 기준 필수 REQ-001~008과 보너스 5개를 모두 구현했습니다. C는 확인용 main(sanitizer·leaks 0), Python은 [demo.py](../../scripts/demo.py) 시연 52 TASK로 확인합니다. 단계별 진행과 상태는 [STATUS.md](STATUS.md)에서 관리합니다.
 
 ## Required — 원문 필수
 
 | ID | 원문 위치 | 완료 기준 | 상태 |
 | --- | --- | --- | --- |
-| REQ-001 | 4. 기본 자료구조 / 이중 연결 리스트 | prev/next/data 노드, insert_front/insert_back/remove_front/remove_back/remove_node/move_to_front 직접 구현. 모든 삽입·삭제·이동 O(1). 빈/단일/복수 노드 동작과 복잡도를 확인 | C 실습: 구현·정적 검토 완료 / 사용자 검증 대기. Python: 미구현 |
-| REQ-002 | 4. 기본 자료구조 / 해시맵 | put/get/remove/contains/keys/size, 직접 설계한 해시 함수, 체이닝 충돌 해결. 로드 팩터 0.75 초과 시 버킷 2배 확장, 충돌·덮어쓰기·삭제·확장 후 항목 보존 확인 | 미구현 |
-| REQ-003 | 4. 기본 자료구조 / 힙 | 최소 힙 push/pop/peek/size 및 _heapify_up/_heapify_down 직접 구현, (expire_at, key) 지원. 최소값 순서와 빈/단일/복수 요소 확인 | 미구현 |
-| REQ-004 | 2·4. String 명령 / 공통·엣지 규칙 | SET/GET/DEL/EXISTS/DBSIZE/KEYS 모두 구현. SET은 OK와 TTL 초기화·LRU 갱신, GET은 성공 시에만 LRU 갱신·값 따옴표 출력/없거나 만료 시 (nil), DEL/EXISTS는 (integer) 1 또는 0, DBSIZE는 개수, KEYS는 전체 목록(패턴·정렬 불필요). 키 명령 전 만료 확인, DEL은 데이터·TTL·LRU 엔트리 함께 제거 | 미구현 |
-| REQ-005 | 4. 메모리 관리 + LRU 자동 제거 | CONFIG SET maxmemory는 0 이상 정수·0 무제한·성공 OK. INFO memory는 used_memory/maxmemory/evicted_keys 최소 포함. 사용량은 Σ(키 UTF-8 바이트 길이 + 값 UTF-8 바이트 길이), 구조 오버헤드 제외. SET 후 초과하면 LRU부터 제한 이하까지 제거하고 evicted_keys 누적. 단일 엔트리가 제한 초과면 저장하지 않고 OOM. 덮어쓰기·삭제·만료·제거 시 사용량 정확성 확인 | 미구현 |
-| REQ-006 | 4. TTL 관리 / 엣지 규칙 | EXPIRE: 없는 키 0·성공 1, 0 이하 초는 즉시 만료 허용. TTL: 없는 키 -2·무기한 -1·나머지 남은 초. 힙으로 가장 빠른 만료를 찾고 GET 만료 삭제 후 (nil)·LRU 미갱신, SET 덮어쓰기 TTL 초기화, DEL의 전 구조 제거, 반복 EXPIRE 이후 만료 상태 일관성 확인 | 미구현 |
-| REQ-007 | 4. 에러 처리·CLI·값 파싱 | mini-redis> REPL·파싱/실행/출력 반복·exit/quit 종료. Redis 스타일 OK/(nil)/(integer) N/(error) 출력. unknown command·인자 수·정수 파싱·OOM은 원문 표준 형식으로 응답. 최소한 공백 없는 값 또는 큰따옴표 값 중 하나 방식 지원 | 미구현 |
-| REQ-008 | 6·7. 환경·제약 | Python 3.8 이상, dict/set/collections 금지, 핵심 Key-Value 컬렉션 대체 금지. 각 자료구조 독립 모듈/파일, 핵심 클래스/함수 주석 또는 docstring. CLI만 구현하며 네트워크·영속성·복잡 자료형·동시성으로 범위를 확대하지 않음 | 미구현 |
+| REQ-001 | 4. 기본 자료구조 / 이중 연결 리스트 | prev/next/data 노드, insert_front/insert_back/remove_front/remove_back/remove_node/move_to_front 직접 구현. 모든 삽입·삭제·이동 O(1). 빈/단일/복수 노드 동작과 복잡도를 확인 | 완료 (C: hashmap·store 확인용 main으로 사용자 실행. Python: linked_list.py) |
+| REQ-002 | 4. 기본 자료구조 / 해시맵 | put/get/remove/contains/keys/size, 직접 설계한 해시 함수, 체이닝 충돌 해결. 로드 팩터 0.75 초과 시 버킷 2배 확장, 충돌·덮어쓰기·삭제·확장 후 항목 보존 확인 | 완료 (C 사용자 실행 확인. Python: hash_map.py) |
+| REQ-003 | 4. 기본 자료구조 / 힙 | 최소 힙 push/pop/peek/size 및 _heapify_up/_heapify_down 직접 구현, (expire_at, key) 지원. 최소값 순서와 빈/단일/복수 요소 확인 | 완료 (C 사용자 실행 확인. Python: min_heap.py, 저장소는 DynamicArray) |
+| REQ-004 | 2·4. String 명령 / 공통·엣지 규칙 | SET/GET/DEL/EXISTS/DBSIZE/KEYS 모두 구현. SET은 OK와 TTL 초기화·LRU 갱신, GET은 성공 시에만 LRU 갱신·값 따옴표 출력/없거나 만료 시 (nil), DEL/EXISTS는 (integer) 1 또는 0, DBSIZE는 개수, KEYS는 전체 목록(패턴·정렬 불필요). 키 명령 전 만료 확인, DEL은 데이터·TTL·LRU 엔트리 함께 제거 | 완료 (Python main.py·store.py. 시연 시나리오 1 Claude 확인, 사용자 미검증) |
+| REQ-005 | 4. 메모리 관리 + LRU 자동 제거 | CONFIG SET maxmemory는 0 이상 정수·0 무제한·성공 OK. INFO memory는 used_memory/maxmemory/evicted_keys 최소 포함. 사용량은 Σ(키 UTF-8 바이트 길이 + 값 UTF-8 바이트 길이), 구조 오버헤드 제외. SET 후 초과하면 LRU부터 제한 이하까지 제거하고 evicted_keys 누적. 단일 엔트리가 제한 초과면 저장하지 않고 OOM. 덮어쓰기·삭제·만료·제거 시 사용량 정확성 확인 | 완료 (C store_test 사용자 확인. Python 시연 시나리오 2 Claude 확인) |
+| REQ-006 | 4. TTL 관리 / 엣지 규칙 | EXPIRE: 없는 키 0·성공 1, 0 이하 초는 즉시 만료 허용. TTL: 없는 키 -2·무기한 -1·나머지 남은 초. 힙으로 가장 빠른 만료를 찾고 GET 만료 삭제 후 (nil)·LRU 미갱신, SET 덮어쓰기 TTL 초기화, DEL의 전 구조 제거, 반복 EXPIRE 이후 만료 상태 일관성 확인 | 완료 (C store_test 사용자 확인. Python 시연 시나리오 3 Claude 확인) |
+| REQ-007 | 4. 에러 처리·CLI·값 파싱 | mini-redis> REPL·파싱/실행/출력 반복·exit/quit 종료. Redis 스타일 OK/(nil)/(integer) N/(error) 출력. unknown command·인자 수·정수 파싱·OOM은 원문 표준 형식으로 응답. 최소한 공백 없는 값 또는 큰따옴표 값 중 하나 방식 지원 | 완료 (Python main.py. 시연 시나리오 5 Claude 확인, 사용자 REPL 일부 실행) |
+| REQ-008 | 6·7. 환경·제약 | Python 3.8 이상, dict/set/collections 금지, 핵심 Key-Value 컬렉션 대체 금지. 각 자료구조 독립 모듈/파일, 핵심 클래스/함수 주석 또는 docstring. CLI만 구현하며 네트워크·영속성·복잡 자료형·동시성으로 범위를 확대하지 않음 | 완료 (dict·set·collections·heapq 미사용, 자료구조별 모듈, docstring. Claude 확인) |
 | REQ-009 | 3. 과제 목표 | 자신의 코드로 해시 함수·체이닝, 해시맵+이중 연결 리스트의 O(1) LRU 추적, TTL에 힙이 적합한 이유, 메모리 제한 시 제거와 used_memory 갱신 흐름을 설명. 자동 평가 없이 사용자 설명·질문으로 확인 | 미확인 |
 
 ## Optional — 원문이 허용한 구현 선택
@@ -28,15 +28,15 @@
 
 ## Bonus — 원문 선택 과제
 
-모두 **미선택·미구현**입니다. 필수 완료 후 사용자가 별도로 선택하며 초기 학습 단계에 자동 추가하지 않습니다.
+2026-11-25 기준 5개 모두 `bonus` 브랜치에서 구현했습니다.
 
-| ID | 원문 5절 항목 | 선택 시 완료 기준 |
-| --- | --- | --- |
-| BONUS-001 | 동적 배열 직접 구현 | append/get/set/remove 및 capacity 2배 확장. 버킷/힙 저장소에 배열 확장 개념 적용 가능 |
-| BONUS-002 | 스택/큐/덱 이해와 활용 | 개념을 조사해 STACK_QUEUE_DEQUE.md에 문서화(선택 시 신규 생성 예정) |
-| BONUS-003 | 이진 트리와 순회 알고리즘 | 이진 트리와 전위/중위/후위/레벨 순회 구현 |
-| BONUS-004 | 이진 탐색 트리(BST) | 삽입/탐색/삭제 및 중위 순회 정렬 결과 구현 |
-| BONUS-005 | Pub/Sub 기능 | PUBLISH/SUBSCRIBE 및 채널 기반 메시징 구현. 네트워크 통신 추가로 해석하지 않음 |
+| ID | 원문 5절 항목 | 선택 시 완료 기준 | 상태 |
+| --- | --- | --- | --- |
+| BONUS-001 | 동적 배열 직접 구현 | append/get/set/remove 및 capacity 2배 확장. 버킷/힙 저장소에 배열 확장 개념 적용 가능 | 완료. Python MinHeap 저장소에 적용 |
+| BONUS-002 | 스택/큐/덱 이해와 활용 | 개념을 조사해 [STACK_QUEUE_DEQUE.md](../STACK_QUEUE_DEQUE.md)에 문서화 | 완료 |
+| BONUS-003 | 이진 트리와 순회 알고리즘 | 이진 트리와 전위/중위/후위/레벨 순회 구현 | 완료 (C·Python) |
+| BONUS-004 | 이진 탐색 트리(BST) | 삽입/탐색/삭제 및 중위 순회 정렬 결과 구현 | 완료 (C·Python) |
+| BONUS-005 | Pub/Sub 기능 | PUBLISH/SUBSCRIBE 및 채널 기반 메시징 구현. 네트워크 통신 추가로 해석하지 않음 | 완료 (C·Python, REPL 하나가 구독자) |
 
 ## 사용자 추가 학습·운영 조건 — 원문과 구분
 
@@ -53,7 +53,7 @@
     - 전체 조회(DBSIZE/KEYS)의 만료 정리 범위: 모든 명령 전 만료 정리로 만료 키는 제외된다.
     - TTL 남은 초: 밀리초 기준 시각에서 내림.
     - OOM 덮어쓰기: 명령을 거부하고 기존 값을 유지한다.
-    - 제한을 낮출 때 제거 시점: CONFIG SET maxmemory 시점에 즉시 LRU 제거(구현은 CLI 단계).
+    - 제한을 낮출 때 제거 시점: 초기에는 CONFIG SET 시점 즉시 제거로 정했으나, PY-2 구현에서 원문의 "SET 이후" 규칙을 따라 CONFIG SET은 제한 값만 바꾸고 다음 SET에서 제거하도록 바꿨습니다.
 - Python 저장소는 원문이 허용한 고정 길이 배열/인덱스 접근 수준에서 선택합니다. 배열 공간 관리가 필요하다는 이유로 동적 배열 보너스 전체를 필수로 승격하지 않습니다.
 - 원문 8절은 참고 예시이며 유일한 테스트·출력 순서를 뜻하지 않습니다. 메모리 예시는 총 33바이트에서 user:1의 11바이트 제거 후 22바이트로 공식과 일치합니다.
 - 구현만 끝나면 `구현됨 · 사용자 검증 대기`로 표시합니다. 완료는 사용자의 실제 결과·설명 근거로 갱신하며 정적 읽기·문서 작성·미실행 예상 결과를 테스트 성공으로 기록하지 않습니다.

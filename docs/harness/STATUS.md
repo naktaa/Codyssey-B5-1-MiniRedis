@@ -2,7 +2,7 @@
 
 ## Current Phase
 
-2026-11-24: 필수(PY-1·PY-2) 완료 후 `bonus` 브랜치에서 보너스 1 동적 배열 완료(Claude 실행 확인, 사용자 미검증).
+2026-11-25: 필수(C-1~C-4, PY-1·PY-2)와 보너스 1~5 구현 완료(`bonus` 브랜치).
 
 ## Completed
 
@@ -25,22 +25,25 @@
 - 2026-11-24 학습 노트: 사용자 요청으로 Claude가 [study-note.md](../study-note.md)를 사용자가 작성한 C 코드 기준으로 작성(자료구조 3개·Store 결합·Q1~Q8·C→Python 포팅 표·부록). 그림 1(images/store-structure.png)은 자리와 메모만 두었고 이미지는 사용자가 넣음. 코드 링크는 레포 루트 절대 경로 + 시작 줄 앵커(`#L138`) 형식으로 정하고, 미리보기 클릭 시 새 탭·IntelliSense 꺼짐이 없음을 사용자가 확인. 이 규칙을 [CLAUDE.md](../../CLAUDE.md) "문서의 코드 링크"와 [LEARNING_TEMPLATE.md](learning/LEARNING_TEMPLATE.md)에 반영.
 - 2026-11-24 시연 스크립트: 사용자 요청으로 Claude가 [demo.py](../../scripts/demo.py)(엔터 단계형, 41 TASK, Store 내부 상태 표시)와 [demo-scenario.md](../demo-scenario.md)를 작성, 사용자가 화면 구조를 수정. 자동·엔터 지연·EOF·Ctrl+C(exit 130)를 Claude가 확인.
 - 2026-11-24 보너스 1 동적 배열: 사용자 요청으로 Claude가 [DynamicArray.c](../../c-practice/DynamicArray.c)(int 원소, append 시 realloc 2배, get/set은 index < size만, remove는 뒤 원소를 당겨 순서 유지 O(n))와 확인용 [dynarray_test.c](../../c-practice/dynarray_test.c)를 구현, sanitizer 실행 기대값 일치·leaks 0 확인. [dynamic_array.py](../../python/dynamic_array.py)로 포팅하고 Python [min_heap.py](../../python/min_heap.py) 저장소를 DynamicArray로 교체(push는 append, pop은 끝 칸 remove, heapify는 get/set). 해시맵 버킷은 rehash가 필요해, C MinHeap은 원소 타입이 달라 적용하지 않음. unittest 36개(신규 6개)·시연 41/41 통과를 Claude가 확인.
+- 2026-11-24 보너스 2: [STACK_QUEUE_DEQUE.md](../STACK_QUEUE_DEQUE.md)에 스택/큐/덱 개념과 이 프로젝트 코드(LRU 리스트, 레벨 순회 큐 등)와의 연결을 정리(353caf3).
+- 2026-11-24 보너스 3 이진 트리: C [BinaryTree.c](../../c-practice/BinaryTree.c)(배열 → 트리, 순회 4종, 레벨 순회 큐는 LinkedList)와 확인용 [tree_test.c](../../c-practice/tree_test.c)(9348305). Claude가 [binary_tree.py](../../python/binary_tree.py)로 포팅(순회 결과는 DynamicArray로 반환, tree_free는 GC로 대체).
+- 2026-11-24 보너스 4 BST: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 [BST.c](../../c-practice/BST.c)(TreeNode·tree_inorder·tree_free 재사용, insert 중복 무시, search 반복문, remove 자식 0/1/2개, 2개는 오른쪽 최솟값 후계자)와 [bst_test.c](../../c-practice/bst_test.c)를 구현(ba64325), [bst.py](../../python/bst.py)로 포팅(eb25188).
+- 2026-11-25 테스트 정리: `.gitignore`의 `test*`가 tests/ 새 파일까지 무시하던 문제를 루트 `/test*`로 좁힘(04be6b9). 이후 사용자 결정으로 tests/ unittest 전체 삭제. 확인은 C 확인용 main과 scripts/demo.py로만 함.
+- 2026-11-25 보너스 5 Pub/Sub: 사용자 요청으로 Claude가 구현. 서버 없이 REPL 하나가 유일한 구독자. C [PubSub.c](../../c-practice/PubSub.c)는 구독 채널을 HashMap(채널 → 1, 키 집합처럼 사용), 받은 메시지 큐를 LinkedList(insert_back/remove_front)로 두고 subscribe(채널 수)·publish(받은 수 1/0)·read(호출한 쪽이 해제) 3개 함수. 확인용 [pubsub_test.c](../../c-practice/pubsub_test.c)로 sanitizer 기대값 일치·leaks 0을 Claude가 확인. [pubsub.py](../../python/pubsub.py)로 포팅, [main.py](../../python/main.py)에 SUBSCRIBE(여러 채널)·PUBLISH 연결(받은 메시지는 발행 결과 뒤에 Redis 형식 3줄). 메시지는 used_memory·DBSIZE·KEYS에 넣지 않음. demo.py에 Pub/Sub 시나리오 11 TASK 추가(e893e9b).
+- 2026-11-25 시연 화면: 상태를 파이프 표(used_memory·maxmemory·evicted_keys·힙 항목·구독 채널, 숫자 오른쪽 정렬, 열 폭 고정)로, 키 목록은 빈 줄 아래 `LRU 순서 (최신 내림차순)`과 고정 열 이름 줄로 표시. `(실행 전/후)` 문구 삭제(59d8cff).
+- 2026-11-25 전체 점검: C 확인용 main 6개(hashmap·store·dynarray·tree·bst·pubsub) sanitizer 실행 기대값 일치·leaks 0, 시연 52/52 통과, Python dict·set·collections·heapq 미사용을 Claude가 확인. README·REQUIREMENTS·학습 노트를 현재 상태로 갱신.
 
 ## In Progress
 
-- 보너스 3 이진 트리: C 구현·커밋 완료(9348305). Claude가 [binary_tree.py](../../python/binary_tree.py)로 포팅(순회 결과는 출력 대신 DynamicArray로 반환, 레벨 순회 큐는 LinkedList, tree_free는 GC로 대체).
-- 보너스 4 BST: 원문은 독립 구현이라 Mini Redis에는 적용하지 않음. 사용자 요청으로 Claude가 C로 구현 ([BST.c](../../c-practice/BST.c): TreeNode·tree_inorder·tree_free 재사용, insert(중복 무시)·search(반복문)·remove(자식 0/1/2개, 2개는 오른쪽 최솟값 후계자), 확인용 [bst_test.c](../../c-practice/bst_test.c)). sanitizer 기대값 일치·leaks 0을 Claude가 확인. 커밋(ba64325) 후 [bst.py](../../python/bst.py)로 포팅. tests/test_binary_tree.py·test_bst.py 추가, unittest 46개 통과를 Claude가 확인.
+없음. (필수·보너스 구현 완료)
 
 ## Next
 
-보너스 3·4 Python 포팅 커밋 후 보너스 5.
+없음.
 
 ## Open Issues
 
-- 2026-11-25 사용자 결정으로 tests/ unittest 전체 삭제. 확인은 C 확인용 main과 scripts/demo.py로만 함.
-- 사용자의 C 확인용 main(보너스)·시연 시나리오 직접 실행은 미확인.
-- 보너스 2~5 미선택. 보너스 1은 사용자 직접 실행 미확인.
-- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(시연 시나리오의 TTL 동작으로만 간접 확인). 학습 노트 그림 1 이미지 미작성.
+- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(store_test와 시연 시나리오의 TTL 동작으로만 간접 확인). 학습 노트 그림 1 이미지(docs/images/store-structure.png) 미작성.
 
 ## Recent Decisions
 

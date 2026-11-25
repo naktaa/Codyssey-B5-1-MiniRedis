@@ -169,4 +169,4 @@ LRU:  새 키 insert_front, 사용한 키 move_to_front, 메모리 초과 시 TA
 ## 6. 다음 보너스와 연결
 
 - 보너스 3 레벨 순회: 방문할 노드를 큐에 넣고 front부터 꺼냅니다. `collections`를 못 쓰므로 LinkedList의 insert_back + remove_front를 큐로 씁니다.
-- 보너스 5 Pub/Sub: 구독자마다 메시지 큐를 두고, PUBLISH는 각 큐의 rear에 넣고, 읽을 때는 front부터 꺼냅니다.
+- 보너스 5 Pub/Sub: 받은 메시지 큐(inbox)를 LinkedList로 두고, PUBLISH는 rear(insert_back)에 넣고, 읽을 때는 front(remove_front)부터 꺼냅니다. 서버가 없어 구독자는 REPL 하나뿐이라 큐도 하나입니다([PubSub.c](/c-practice/PubSub.c) [L41](/c-practice/PubSub.c#L41) [L46-54](/c-practice/PubSub.c#L46)).

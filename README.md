@@ -1,97 +1,63 @@
 # Mini Redis
 
-자료구조를 직접 구현하며 Redis의 LRU·TTL·메모리 제한 동작을 배우는 CLI 프로젝트입니다. C 실습에서 연결 리스트·체이닝 해시맵·최소 힙·LRU/TTL/메모리 제한 결합을 직접 구현했고, 그 코드를 Python으로 포팅해 최종 CLI 프로그램을 완성했습니다.
+해시맵·이중 연결 리스트·최소 힙을 직접 구현해 만든 CLI Mini Redis입니다. LRU 제거, TTL 만료, 메모리 제한, Pub/Sub을 지원합니다.
 
-원문은 [MISSION.md](docs/harness/MISSION.md), 필수·보너스 완료 기준은 [REQUIREMENTS.md](docs/harness/REQUIREMENTS.md), 현재 단계는 [STATUS.md](docs/harness/STATUS.md)에 있습니다. 구현 설명은 학습 노트 [study-note.md](docs/study-note.md)에 C 코드 기준으로 정리했고, 기능 시연 흐름은 [demo-scenario.md](docs/demo-scenario.md)에 있습니다. 진행 방식은 [CLAUDE.md](CLAUDE.md)를 따르며, [AGENTS.md](AGENTS.md)와 `docs/harness/`의 나머지 절차 문서는 Codex용 기록입니다.
-
-## 기본 구조와 환경
+## 구조
 
 ```text
 .
-├── CLAUDE.md            # Claude Code 진행 지침
-├── AGENTS.md            # Codex용 기록
-├── README.md
-├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store, DynamicArray, PubSub (.h/.c), 확인용 hashmap_test.c, store_test.c, dynarray_test.c, pubsub_test.c
-├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, dynamic_array.py, min_heap.py, store.py, pubsub.py, main.py
-├── scripts/demo.py      # 엔터 단계형 시연 (52 TASK, 내부 상태 표시)
+├── c-practice/   # C 선행 실습
+├── python/       # Mini Redis 본체 (CLI)
+├── scripts/      # 시연 스크립트
 └── docs/
-    ├── study-note.md    # 학습 노트 (C 코드 기준)
-    ├── demo-scenario.md # 시연 시나리오 흐름과 화면 읽는 법
-    └── harness/         # 원문·요구사항·상태·이력·템플릿
 ```
 
-- 최종 환경: Python 3.8 이상, 외부 dependency 없음. C 실습에는 C 컴파일러가 필요하며 C++는 사용하지 않습니다.
-- 빌드 생성물은 루트 `build/`에 둡니다(git 추적 안 함).
+## 실행
 
-## 실행과 테스트
-
-레포 루트에서 실행합니다.
+Python 3.8 이상, 외부 의존성 없음. 레포 루트에서 실행합니다.
 
 ```bash
-# Python CLI
-python3 python/main.py
-
-# 시연: 엔터로 한 단계씩 (a: 끝까지 자동, Ctrl+C: 중단) / --auto: 끝까지 자동
-python3 scripts/demo.py
-
-# C 확인용 main (sanitizer)
-mkdir -p build
-gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/hashmap c-practice/hashmap_test.c c-practice/HashMap.c c-practice/LinkedList.c
-gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
-./build/store
-gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/dynarray c-practice/dynarray_test.c c-practice/DynamicArray.c
-./build/dynarray
-gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/pubsub c-practice/pubsub_test.c c-practice/PubSub.c c-practice/HashMap.c c-practice/LinkedList.c
-./build/pubsub
-
-# C 누수 확인 (macOS는 LeakSanitizer 미지원이라 sanitizer 없이 빌드)
-gcc -Wall -Wextra -g -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
-leaks --atExit -- ./build/store
+python3 python/main.py          # CLI
+python3 scripts/demo.py         # 시연 (엔터로 한 단계씩, --auto: 끝까지 자동)
 ```
 
-지원 명령: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` · `SUBSCRIBE` `PUBLISH`(보너스 5) · `exit`/`quit`. 출력과 에러 문구는 실제 Redis가 아니라 미션 원문 기준입니다(예: `KEYS` 출력은 `1. "key"`). 미션 원문에 예시가 없는 `SUBSCRIBE`·`PUBLISH`는 실제 Redis 형식을 따릅니다.
+## 기능과 사용법
 
-```text
-mini-redis> CONFIG SET maxmemory 30
-OK
-mini-redis> SET user:1 "Alice"
-OK
-mini-redis> SET user:2 "Bob"
-OK
-mini-redis> SET user:3 "Charlie"
-OK
-mini-redis> GET user:1
-(nil)
-mini-redis> INFO memory
-used_memory:22
-maxmemory:30
-evicted_keys:1
-```
+공백이 있는 값은 큰따옴표로 감쌉니다: `SET user:1 "Alice Kim"`. 명령 이름은 대소문자를 구분하지 않습니다.
 
-## 단계별 학습 계획
+### 키-값
 
-C 단계(C-1~C-4)에서 자료구조를 직접 설계·구현했고, PY 단계는 그 C 코드를 구조·로직 그대로 Python으로 옮겼습니다. 언어 차이로 꼭 필요한 부분과 C에 없던 CLI(명령 파싱·출력)만 새로 작성했습니다.
+| 명령 | 기능 | 출력 |
+| --- | --- | --- |
+| `SET key value` | 저장. 기존 키를 덮어쓰면 TTL 삭제 | `OK` |
+| `GET key` | 조회. 성공 시 최근 사용으로 갱신 | `"value"` / `(nil)` |
+| `DEL key` | 삭제 | `(integer) 1` / `(integer) 0` |
+| `EXISTS key` | 존재 확인 | `(integer) 1` / `(integer) 0` |
+| `DBSIZE` | 키 개수 | `(integer) N` |
+| `KEYS` | 전체 키 목록 | `1. "key"` … / `(empty array)` |
 
-| 단계 | 위치 | 목표·완료 기준 | 상태 |
-| --- | --- | --- | --- |
-| C-1 | [LinkedList.c](c-practice/LinkedList.c) | 이중 연결 리스트: 원문의 6개 연산, 삽입/삭제/이동 O(1), 연결·수명·해제 | 완료 |
-| C-2 | [HashMap.c](c-practice/HashMap.c) | 직접 해시 함수와 체이닝 해시맵: 원문의 6개 연산, 충돌 처리, 로드 팩터 0.75 초과 시 2배 확장 | 완료 (사용자 실행 확인) |
-| C-3 | [MinHeap.c](c-practice/MinHeap.c) | 최소 힙: push/pop/peek/size와 상·하향 정렬, (expire_at, key) 요소 | 완료 (사용자 실행 확인) |
-| C-4 | [Store.c](c-practice/Store.c) | LRU·TTL·메모리 제한 결합: 갱신·삭제·만료·제거 시 일관성, used_memory·evicted_keys, 메모리 해제 | 완료 (사용자 실행 확인, leaks 0) |
-| PY-1 | [python](python/) | 연결 리스트·해시맵·최소 힙을 독립 모듈로 포팅, 원문 이름의 클래스 메서드 | 완료 (Claude 실행 확인, 사용자 미검증) |
-| PY-2 | [store.py](python/store.py), [main.py](python/main.py) | Store.c 포팅(used_memory는 원문 UTF-8 공식)과 CLI. 명령 10개, 에러 4종, 큰따옴표 값 | 완료 (Claude 실행 확인, 사용자 REPL 일부 실행) |
-| PY-3 | [python](python/), [demo.py](scripts/demo.py) | 사용자가 C 확인용 main·시연 시나리오를 직접 확인하고 원문의 4개 학습 목표를 자기 코드로 설명 | 대기 |
-| BONUS-1 | [DynamicArray.c](c-practice/DynamicArray.c), [dynamic_array.py](python/dynamic_array.py) | 동적 배열 append/get/set/remove와 capacity 2배 확장. Python MinHeap 저장소에 적용 | 완료 (Claude 실행 확인, 사용자 미검증) |
+### 메모리 제한
 
-보너스 2~5는 선택하지 않았습니다.
+| 명령 | 기능 | 출력 |
+| --- | --- | --- |
+| `CONFIG SET maxmemory bytes` | 최대 메모리 설정(0 = 무제한). 초과하면 다음 SET에서 가장 오래 안 쓴 키부터 제거 | `OK` |
+| `INFO memory` | 사용량·제한·제거된 키 수 | `used_memory:N` / `maxmemory:N` / `evicted_keys:N` |
 
-## 주요 설계 결정
+### 만료 (TTL)
 
-- **소유권**: Node는 리스트가, Data와 key 문자열은 해시맵이 해제합니다. 힙은 key를 복사해 소유하고, pop한 key는 호출한 쪽이 해제합니다.
-- **LRU**: Data가 LRU 노드 주소(lru_node)를 직접 가져 GET·SET 갱신과 TAIL 제거가 O(1)입니다. 해시맵은 LRU를 모르고 Store가 갱신합니다.
-- **TTL**: 밀리초 만료 시각을 최소 힙에 넣고, 꺼낼 때 해시맵의 현재 만료 시각과 같을 때만 지웁니다(lazy deletion). 모든 명령 전에 만료를 정리합니다.
-- **메모리 제한**: 단일 엔트리가 maxmemory를 넘으면 저장하지 않고 OOM을 돌려줍니다. 저장 후 초과하면 TAIL부터 제거하고 evicted_keys를 셉니다. 만료로 지운 키는 세지 않습니다.
-- **동적 배열 적용**: Python MinHeap의 저장 공간(배열·개수·2배 확장)을 DynamicArray로 옮기고 힙은 순서 규칙만 지킵니다. 해시맵 버킷 확장은 rehash가 필요해 적용하지 않았습니다. C MinHeap은 원소 타입(`HeapItem`)이 `int` 동적 배열과 달라 그대로 둡니다.
-- **Python 제약**: dict·set·collections·heapq·내장 hash()를 쓰지 않고, list는 고정 길이 배열과 인덱스 접근으로만 씁니다.
+| 명령 | 기능 | 출력 |
+| --- | --- | --- |
+| `EXPIRE key seconds` | 만료 설정. 0 이하는 즉시 삭제 | `(integer) 1` / `(integer) 0`(없는 키) |
+| `TTL key` | 남은 초 | `(integer) N` / `-1`(만료 없음) / `-2`(없는 키) |
 
-설계 근거는 [WORKLOG](docs/harness/WORKLOG.md), 남은 작업은 [STATUS](docs/harness/STATUS.md)에 있습니다.
+### Pub/Sub
+
+| 명령 | 기능 | 출력 |
+| --- | --- | --- |
+| `SUBSCRIBE channel [channel ...]` | 채널 구독 | `1) "subscribe"` / `2) "channel"` / `3) (integer) 구독 채널 수` |
+| `PUBLISH channel message` | 발행. 구독한 채널이면 받은 메시지가 바로 뒤에 출력 | `(integer) 1` / `(integer) 0` |
+
+### 종료와 에러
+
+- `exit` / `quit`로 종료합니다.
+- 없는 명령, 인자 개수 오류, 정수 파싱 실패, 메모리 초과(OOM)는 `(error) ...`로 출력합니다.
