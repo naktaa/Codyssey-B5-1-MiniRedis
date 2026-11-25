@@ -26,7 +26,7 @@ class PubSub:
 
     def __init__(self):
         self.channels = HashMap(INITIAL_CAPACITY)
-        self.inbox = LinkedList()  # HEAD = 먼저 온 메시지
+        self.inbox: LinkedList[Message] = LinkedList()  # HEAD = 먼저 온 메시지
 
     def subscribe(self, channel):
         """채널을 구독한다. 반환: 구독 중인 채널 수. 이미 구독한 채널이면 수가 그대로다."""

@@ -36,7 +36,7 @@
 
 Python: [linked_list.py](/python/linked_list.py)
 
-**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L10-28](/python/linked_list.py#L10))
+**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L14-32](/python/linked_list.py#L14))
 
 ```text
 HEAD -> [A] <-> [B] <- TAIL
@@ -58,7 +58,7 @@ Node는 prev·next·data 세 필드만 가지고, LinkedList는 HEAD·TAIL 두 �
 | `remove_node(list, now)` | 양 끝은 위 두 함수에 맡기고, 중간은 이웃을 이은 뒤 free | [L64-76](/c-practice/LinkedList.c#L64) |
 | `move_to_front(list, now)` | 떼어서 맨 앞으로 옮김. free하지 않음 | [L78-95](/c-practice/LinkedList.c#L78) |
 
-#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L30-38](/python/linked_list.py#L30))
+#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L34-42](/python/linked_list.py#L34))
 
 새 노드 N의 prev·next를 정하고, 기존 HEAD와 리스트의 HEAD를 N으로 바꿉니다.
 
@@ -70,7 +70,7 @@ changed: N.prev = NULL, N.next = A, A.prev = N, HEAD = N
 
 빈 리스트면 HEAD와 TAIL이 모두 N이 됩니다. insert_back은 방향만 반대입니다.
 
-#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L72-80](/python/linked_list.py#L72))
+#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L76-84](/python/linked_list.py#L76))
 
 중간 노드는 앞뒤 이웃을 서로 이은 뒤 free합니다.
 
@@ -82,7 +82,7 @@ changed: A.next = C (now->prev->next = now->next), C.prev = A (now->next->prev =
 
 now가 HEAD나 TAIL이면 remove_front·remove_back을 불러, HEAD·TAIL 갱신 코드를 한 곳에만 둡니다.
 
-#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L82-95](/python/linked_list.py#L82))
+#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L86-99](/python/linked_list.py#L86))
 
 노드를 새로 만들거나 free하지 않고 연결만 바꿔 맨 앞으로 옮깁니다.
 

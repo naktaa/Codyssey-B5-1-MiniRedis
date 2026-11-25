@@ -89,7 +89,7 @@ def levelorder(root):
     if root is None:
         return out
 
-    queue = LinkedList()
+    queue: LinkedList[TreeNode] = LinkedList()
     queue.insert_back(Node(root))
 
     while queue.HEAD:

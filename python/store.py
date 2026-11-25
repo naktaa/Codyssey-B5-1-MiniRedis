@@ -11,7 +11,7 @@
 """
 
 from linked_list import Node, LinkedList
-from hash_map import HashMap
+from hash_map import Data, HashMap
 from min_heap import MinHeap
 
 # set 반환값. CLI가 OOM 에러 문구를 따로 출력하려고 구분한다.
@@ -36,7 +36,7 @@ class Store:
 
     def __init__(self):
         self.map = HashMap(INITIAL_CAPACITY)
-        self.lru = LinkedList()  # HEAD = 가장 최근, TAIL = 가장 오래됨
+        self.lru: LinkedList[Data] = LinkedList()  # HEAD = 가장 최근, TAIL = 가장 오래됨
         self.heap = MinHeap(INITIAL_CAPACITY)
         self.used_memory = 0
         self.maxmemory = 0

@@ -4,30 +4,34 @@ C와 같이 Node는 data만 가리키고, 리스트는 HEAD/TAIL로 양 끝을 �
 C의 free(Node)는 Python에서 참조를 끊는 것으로 대신한다(GC가 회수).
 """
 
-from typing import Optional
+from typing import Generic, Optional, TypeVar
+
+# 노드가 담는 데이터의 타입. C의 void* 자리를 Python 제네릭으로 표현한다(실행에는 영향 없음).
+# LinkedList[Data]처럼 만들면 편집기가 node.data를 Data로 알아본다.
+T = TypeVar("T")
 
 
-class Node:
+class Node(Generic[T]):
     """리스트의 한 칸. data는 실제 데이터(해시맵의 Data 등)를 가리킨다."""
 
-    def __init__(self, data=None):
+    def __init__(self, data: T):
         self.data = data
-        # 타입 표시: None으로 시작해도 편집기가 Node의 prev/next로 알아보게 한다(실행에는 영향 없음).
-        self.prev: Optional["Node"] = None
-        self.next: Optional["Node"] = None
+        # 타입 표시: None으로 시작해도 편집기가 Node의 prev/next로 알아보게 한다.
+        self.prev: Optional["Node[T]"] = None
+        self.next: Optional["Node[T]"] = None
 
 
-class LinkedList:
+class LinkedList(Generic[T]):
     """HEAD/TAIL로 양 끝을 가리키는 이중 연결 리스트. 빈 리스트는 둘 다 None.
 
     모든 삽입/삭제/이동 연산은 O(1)이다.
     """
 
     def __init__(self):
-        self.HEAD: Optional[Node] = None
-        self.TAIL: Optional[Node] = None
+        self.HEAD: Optional[Node[T]] = None
+        self.TAIL: Optional[Node[T]] = None
 
-    def insert_front(self, now: Node):
+    def insert_front(self, now: Node[T]):
         """now 노드를 리스트 맨 앞에 붙인다."""
         if self.HEAD is None:
             self.HEAD = self.TAIL = now
@@ -37,7 +41,7 @@ class LinkedList:
             self.HEAD.prev = now
             self.HEAD = now
 
-    def insert_back(self, now: Node):
+    def insert_back(self, now: Node[T]):
         """now 노드를 리스트 맨 뒤에 붙인다."""
         if self.TAIL is None:
             now.prev = now.next = None
@@ -69,7 +73,7 @@ class LinkedList:
                 self.TAIL = self.TAIL.prev
                 self.TAIL.next = None
 
-    def remove_node(self, now: Node):
+    def remove_node(self, now: Node[T]):
         """now 노드를 리스트에서 떼어 낸다. 양 끝이면 remove_front/back을 쓴다."""
         if now is self.HEAD:
             self.remove_front()
@@ -79,7 +83,7 @@ class LinkedList:
             now.prev.next = now.next
             now.next.prev = now.prev
 
-    def move_to_front(self, now: Node):
+    def move_to_front(self, now: Node[T]):
         """이미 리스트에 있는 now 노드를 맨 앞으로 옮긴다. 노드는 새로 만들지 않는다."""
         if self.HEAD is now:
             return

@@ -5,7 +5,7 @@ dict·set·내장 hash()는 쓰지 않는다. 버킷 배열은 고정 길이 lis
 확장도 새 배열을 만들어 직접 옮긴다.
 """
 
-from typing import Optional
+from typing import List, Optional
 
 from linked_list import Node, LinkedList
 
@@ -19,7 +19,7 @@ class Data:
     def __init__(self, key, value):
         self.key = key
         self.value = value
-        self.lru_node: Optional[Node] = None  # Store의 LRU 리스트에서 이 키를 담은 노드
+        self.lru_node: Optional["Node[Data]"] = None  # Store의 LRU 리스트에서 이 키를 담은 노드
         self.expire_at = 0    # 만료 시각(ms). 0이면 만료 없음(store.NO_EXPIRE)
 
 
@@ -28,7 +28,7 @@ class HashMap:
 
     def __init__(self, capacity):
         # 각 칸을 별도의 LinkedList 객체로 만든다([LinkedList()] * n은 한 객체를 공유하게 된다).
-        self.buckets = [LinkedList() for _ in range(capacity)]
+        self.buckets: List[LinkedList[Data]] = [LinkedList() for _ in range(capacity)]
         self.capacity = capacity
         self.count = 0
 
@@ -76,7 +76,7 @@ class HashMap:
         # 버킷 2배 확장
         if self.count * 4 > self.capacity * 3:
             new_capacity = self.capacity * 2
-            new_buckets = [LinkedList() for _ in range(new_capacity)]
+            new_buckets: List[LinkedList[Data]] = [LinkedList() for _ in range(new_capacity)]
 
             for i in range(self.capacity):
                 prev_list = self.buckets[i]
