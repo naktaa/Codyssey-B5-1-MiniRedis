@@ -18,3 +18,7 @@ __pycache__/
 
 # 운영체제 생성물
 .DS_Store
+
+# 임시
+# 루트의 test* 임시 파일
+/test*

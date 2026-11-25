@@ -7,6 +7,7 @@
 import time
 
 from store import Store, STORE_ERR_OOM
+from pubsub import PubSub
 
 ERR_SYNTAX = "(error) ERR syntax error"
 ERR_NOT_INTEGER = "(error) ERR value is not an integer or out of range"
@@ -62,11 +63,39 @@ def wrong_args(cmd):
     return "(error) ERR wrong number of arguments for '%s' command" % cmd
 
 
-def execute(store, tokens, now):
+def read_messages(pubsub):
+    """inbox에 쌓인 메시지를 모두 꺼내 Redis 형식 문자열로 돌려준다. 없으면 빈 문자열."""
+    blocks = []
+    msg = pubsub.read()
+    while msg:
+        blocks.append('1) "message"\n2) "%s"\n3) "%s"' % (msg.channel, msg.text))
+        msg = pubsub.read()
+    return "\n".join(blocks)
+
+
+def execute(store, pubsub, tokens, now):
     """토큰 배열의 명령을 실행하고 출력할 문자열을 돌려준다. 명령 이름은 대소문자를 구분하지 않는다."""
     cmd = tokens[0]
     name = cmd.upper()
     args = tokens[1:]
+
+    if name == "SUBSCRIBE":
+        # Redis처럼 채널을 여러 개 받을 수 있고, 채널마다 구독 확인 3줄을 출력한다.
+        if len(args) == 0:
+            return wrong_args(cmd)
+        blocks = []
+        for channel in args:
+            count = pubsub.subscribe(channel)
+            blocks.append('1) "subscribe"\n2) "%s"\n3) (integer) %d' % (channel, count))
+        return "\n".join(blocks)
+
+    if name == "PUBLISH":
+        if len(args) != 2:
+            return wrong_args(cmd)
+        result = "(integer) %d" % pubsub.publish(args[0], args[1])
+        # 구독자는 REPL 자신이므로, 받은 메시지를 발행 결과 바로 뒤에 보여 준다.
+        messages = read_messages(pubsub)
+        return result + "\n" + messages if messages else result
 
     if name == "SET":
         if len(args) != 2:
@@ -150,6 +179,7 @@ def execute(store, tokens, now):
 def main():
     """REPL: 프롬프트 출력 → 입력 → 실행 → 출력을 반복한다. exit/quit 또는 EOF로 종료."""
     store = Store()
+    pubsub = PubSub()
 
     while True:
         try:
@@ -167,7 +197,7 @@ def main():
         if tokens[0].lower() in ("exit", "quit"):
             break
 
-        print(execute(store, tokens, now_ms()))
+        print(execute(store, pubsub, tokens, now_ms()))
 
 
 if __name__ == "__main__":
