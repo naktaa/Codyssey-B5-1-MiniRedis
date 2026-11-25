@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 
 from main import ERR_QUOTES, execute, now_ms, tokenize  # noqa: E402
 from store import Store                      # noqa: E402
+from pubsub import PubSub                    # noqa: E402
 
 TTY = sys.stdout.isatty()
 OOM = "(error) OOM command not allowed when used_memory > 'maxmemory'"
@@ -39,6 +40,16 @@ def keys(*names):
     f.desc = "키 %s (순서 무관)" % ", ".join(names)
     f.names = names
     return f
+
+
+def sub(channel, count):
+    """SUBSCRIBE 응답 3줄."""
+    return '1) "subscribe"\n2) "%s"\n3) (integer) %d' % (channel, count)
+
+
+def msg(channel, text):
+    """PUBLISH 결과 1 뒤에 이어지는 받은 메시지 3줄."""
+    return '(integer) 1\n1) "message"\n2) "%s"\n3) "%s"' % (channel, text)
 
 
 def between(lo, hi):
@@ -94,6 +105,19 @@ SCENARIOS = [
         ("EXPIRE a 0", "0 이하는 즉시 만료", "(integer) 1"),
         ("EXISTS a", "삭제됨", "(integer) 0"),
     ]),
+    ("Pub/Sub (보너스 5)", [
+        ('PUBLISH news "hello"', "구독 전 발행: 받은 구독자 0, 메시지는 버려짐", "(integer) 0"),
+        ("SUBSCRIBE news", "구독: 구독 중인 채널 수 1", sub("news", 1)),
+        ("SUBSCRIBE news", "같은 채널을 다시 구독해도 수는 그대로", sub("news", 1)),
+        ("SUBSCRIBE sports", "두 번째 채널", sub("sports", 2)),
+        ('PUBLISH news "hello"', "받은 구독자 1 → 큐에 넣고 바로 꺼내 출력", msg("news", "hello")),
+        ('PUBLISH weather "sunny"', "구독 안 한 채널", "(integer) 0"),
+        ('PUBLISH sports "goal in"', "큰따옴표로 공백 포함 메시지", msg("sports", "goal in")),
+        ("DBSIZE", "메시지와 채널은 키가 아님", "(integer) 0"),
+        ("INFO memory", "used_memory에도 들어가지 않음", info(0, 0, 0)),
+        ("PUBLISH news", "인자 개수 오류", "(error) ERR wrong number of arguments for 'PUBLISH' command"),
+        ("SUBSCRIBE", "인자 개수 오류", "(error) ERR wrong number of arguments for 'SUBSCRIBE' command"),
+    ]),
     ("에러 처리와 종료", [
         ("HELLO", "없는 명령", "(error) ERR unknown command 'HELLO'"),
         ("GET", "인자 개수 오류", "(error) ERR wrong number of arguments for 'GET' command"),
@@ -109,7 +133,7 @@ RULE = "─" * 72
 
 # ---------- 실행 ----------
 
-def run(store, cmd, expected):
+def run(store, pubsub, cmd, expected):
     """명령 하나를 실행해 (출력, 통과 여부)를 돌려준다."""
     if not isinstance(cmd, str):
         time.sleep(cmd)
@@ -120,7 +144,7 @@ def run(store, cmd, expected):
                               stdout=subprocess.DEVNULL).returncode
         return "(프로그램 종료, exit code %d)" % code, code == 0
     tokens = tokenize(cmd)
-    out = ERR_QUOTES if tokens is None else execute(store, tokens, now_ms())
+    out = ERR_QUOTES if tokens is None else execute(store, pubsub, tokens, now_ms())
     return out, expected(out) if callable(expected) else out == expected
 
 
@@ -135,11 +159,13 @@ def pad(text, n):
     return text + " " * max(0, n - width(text))
 
 
-def state_lines(store):
+def state_lines(store, pubsub):
     """LRU 순서대로 키·값·크기·TTL과 메모리 상태를 보여 준다. 만료 정리는 하지 않고 있는 그대로 읽는다."""
     now = now_ms()
     lines = ["Redis 상태   used_memory %d / maxmemory %s   evicted_keys %d   힙 항목 %d" % (
         store.used_memory, store.maxmemory or "0(무제한)", store.evicted_keys, store.heap.size())]
+    if pubsub.channels.size() > 0:  # 구독한 채널이 있을 때만 (Pub/Sub 시나리오)
+        lines.append("  구독 채널 %d개: %s" % (pubsub.channels.size(), ", ".join(pubsub.channels.keys())))
     node = store.lru.HEAD
     if node is None:
         return lines + ["  (비어 있음)"]
@@ -173,7 +199,7 @@ def output_lines(tasks):
     return max(n(t[3]) for t in tasks) + 1
 
 
-def render(task, no, store, result, new_scen, height):
+def render(task, no, store, pubsub, result, new_scen, height):
     """한 화면: TASK와 명령 → 출력 칸(높이 고정) → Redis 상태. result가 None이면 실행 전."""
     scen, cmd, note, expected = task
     print(CLEAR, end="")
@@ -194,7 +220,7 @@ def render(task, no, store, result, new_scen, height):
 
     print(RULE)
     print("(실행 전)" if result is None else "(실행 후)")
-    for line in state_lines(store):
+    for line in state_lines(store, pubsub):
         print(line)
     print(RULE)
 
@@ -226,21 +252,22 @@ def main():
     tasks = [(title, cmd, note, exp) for title, steps in SCENARIOS for cmd, note, exp in steps]
     height = output_lines(tasks)
     results = []
-    store = None
+    store = pubsub = None
 
     for idx, task in enumerate(tasks):
         new_scen = idx == 0 or tasks[idx - 1][0] != task[0]
         if new_scen:                          # 시나리오마다 빈 Redis로 시작
             store = Store()
+            pubsub = PubSub()
         if TTY:                               # 엔터 1: 이 TASK 실행
-            render(task, idx + 1, store, None, new_scen, height)
+            render(task, idx + 1, store, pubsub, None, new_scen, height)
             auto = wait(auto)
 
-        result = run(store, task[1], task[3])
+        result = run(store, pubsub, task[1], task[3])
         results.append(result)
 
         if TTY:                               # 엔터 2: 결과를 본 뒤 다음 TASK로
-            render(task, idx + 1, store, result, new_scen, height)
+            render(task, idx + 1, store, pubsub, result, new_scen, height)
             auto = wait(auto)
         else:
             log_line(idx + 1, task, result)

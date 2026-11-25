@@ -11,10 +11,9 @@
 ├── CLAUDE.md            # Claude Code 진행 지침
 ├── AGENTS.md            # Codex용 기록
 ├── README.md
-├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store, DynamicArray (.h/.c), 확인용 hashmap_test.c, store_test.c, dynarray_test.c
-├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, dynamic_array.py, min_heap.py, store.py, main.py
-├── tests/               # unittest: test_linked_list.py, test_hash_map.py, test_dynamic_array.py, test_min_heap.py, test_store.py, test_main.py
-├── scripts/demo.py      # 엔터 단계형 시연 (41 TASK, 내부 상태 표시)
+├── c-practice/          # C 실습: LinkedList, HashMap, MinHeap, Store, DynamicArray, PubSub (.h/.c), 확인용 hashmap_test.c, store_test.c, dynarray_test.c, pubsub_test.c
+├── python/              # Python 최종 Mini Redis: linked_list.py, hash_map.py, dynamic_array.py, min_heap.py, store.py, pubsub.py, main.py
+├── scripts/demo.py      # 엔터 단계형 시연 (52 TASK, 내부 상태 표시)
 └── docs/
     ├── study-note.md    # 학습 노트 (C 코드 기준)
     ├── demo-scenario.md # 시연 시나리오 흐름과 화면 읽는 법
@@ -32,9 +31,6 @@
 # Python CLI
 python3 python/main.py
 
-# Python 테스트 (36개)
-python3 -m unittest discover -s tests -v
-
 # 시연: 엔터로 한 단계씩 (a: 끝까지 자동, Ctrl+C: 중단) / --auto: 끝까지 자동
 python3 scripts/demo.py
 
@@ -45,13 +41,15 @@ gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/store c-practice/stor
 ./build/store
 gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/dynarray c-practice/dynarray_test.c c-practice/DynamicArray.c
 ./build/dynarray
+gcc -Wall -Wextra -g -fsanitize=address,undefined -o build/pubsub c-practice/pubsub_test.c c-practice/PubSub.c c-practice/HashMap.c c-practice/LinkedList.c
+./build/pubsub
 
 # C 누수 확인 (macOS는 LeakSanitizer 미지원이라 sanitizer 없이 빌드)
 gcc -Wall -Wextra -g -o build/store c-practice/store_test.c c-practice/Store.c c-practice/HashMap.c c-practice/LinkedList.c c-practice/MinHeap.c
 leaks --atExit -- ./build/store
 ```
 
-지원 명령: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` · `exit`/`quit`. 출력과 에러 문구는 실제 Redis가 아니라 미션 원문 기준입니다(예: `KEYS` 출력은 `1. "key"`).
+지원 명령: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` · `SUBSCRIBE` `PUBLISH`(보너스 5) · `exit`/`quit`. 출력과 에러 문구는 실제 Redis가 아니라 미션 원문 기준입니다(예: `KEYS` 출력은 `1. "key"`). 미션 원문에 예시가 없는 `SUBSCRIBE`·`PUBLISH`는 실제 Redis 형식을 따릅니다.
 
 ```text
 mini-redis> CONFIG SET maxmemory 30
@@ -76,13 +74,13 @@ C 단계(C-1~C-4)에서 자료구조를 직접 설계·구현했고, PY 단계�
 
 | 단계 | 위치 | 목표·완료 기준 | 상태 |
 | --- | --- | --- | --- |
-| C-1 | [LinkedList.c](c-practice/LinkedList.c) | 이중 연결 리스트: 원문의 6개 연산, 삽입/삭제/이동 O(1), 연결·수명·해제 | 완료 (remove_front·remove_back 단독 호출은 Python 테스트로 확인) |
+| C-1 | [LinkedList.c](c-practice/LinkedList.c) | 이중 연결 리스트: 원문의 6개 연산, 삽입/삭제/이동 O(1), 연결·수명·해제 | 완료 |
 | C-2 | [HashMap.c](c-practice/HashMap.c) | 직접 해시 함수와 체이닝 해시맵: 원문의 6개 연산, 충돌 처리, 로드 팩터 0.75 초과 시 2배 확장 | 완료 (사용자 실행 확인) |
 | C-3 | [MinHeap.c](c-practice/MinHeap.c) | 최소 힙: push/pop/peek/size와 상·하향 정렬, (expire_at, key) 요소 | 완료 (사용자 실행 확인) |
 | C-4 | [Store.c](c-practice/Store.c) | LRU·TTL·메모리 제한 결합: 갱신·삭제·만료·제거 시 일관성, used_memory·evicted_keys, 메모리 해제 | 완료 (사용자 실행 확인, leaks 0) |
-| PY-1 | [python](python/), [tests](tests/) | 연결 리스트·해시맵·최소 힙을 독립 모듈로 포팅, 원문 이름의 클래스 메서드, unittest 확인 | 완료 (Claude 실행 확인, 사용자 미검증) |
+| PY-1 | [python](python/) | 연결 리스트·해시맵·최소 힙을 독립 모듈로 포팅, 원문 이름의 클래스 메서드 | 완료 (Claude 실행 확인, 사용자 미검증) |
 | PY-2 | [store.py](python/store.py), [main.py](python/main.py) | Store.c 포팅(used_memory는 원문 UTF-8 공식)과 CLI. 명령 10개, 에러 4종, 큰따옴표 값 | 완료 (Claude 실행 확인, 사용자 REPL 일부 실행) |
-| PY-3 | [python](python/), [tests](tests/) | 사용자가 전체 테스트·REPL 시나리오를 직접 확인하고 원문의 4개 학습 목표를 자기 코드로 설명 | 대기 |
+| PY-3 | [python](python/), [demo.py](scripts/demo.py) | 사용자가 C 확인용 main·시연 시나리오를 직접 확인하고 원문의 4개 학습 목표를 자기 코드로 설명 | 대기 |
 | BONUS-1 | [DynamicArray.c](c-practice/DynamicArray.c), [dynamic_array.py](python/dynamic_array.py) | 동적 배열 append/get/set/remove와 capacity 2배 확장. Python MinHeap 저장소에 적용 | 완료 (Claude 실행 확인, 사용자 미검증) |
 
 보너스 2~5는 선택하지 않았습니다.

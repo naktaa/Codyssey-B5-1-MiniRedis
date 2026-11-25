@@ -37,9 +37,10 @@
 
 ## Open Issues
 
-- 사용자의 전체 unittest·REPL 시나리오 직접 실행은 미확인.
+- 2026-11-25 사용자 결정으로 tests/ unittest 전체 삭제. 확인은 C 확인용 main과 scripts/demo.py로만 함.
+- 사용자의 C 확인용 main(보너스)·시연 시나리오 직접 실행은 미확인.
 - 보너스 2~5 미선택. 보너스 1은 사용자 직접 실행 미확인.
-- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(Python test_min_heap.py로만 확인 가능). 학습 노트 그림 1 이미지 미작성.
+- C-3 확인용 build/tmp/minheap_test.c가 지금 없어 C 최소 힙 테스트는 다시 실행할 수 없음(시연 시나리오의 TTL 동작으로만 간접 확인). 학습 노트 그림 1 이미지 미작성.
 
 ## Recent Decisions
 

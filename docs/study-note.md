@@ -4,10 +4,10 @@
 
 - **목적**: 내장 컬렉션 없이 직접 만든 자료구조로 Redis의 LRU 제거·TTL 만료·메모리 제한을 구현합니다.
 - **기능**: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` (+ `exit`/`quit`)
-- **결과**: C 확인용 main은 sanitizer 빌드로 사용자 실행 확인, leaks 0. Python unittest 30개는 Claude 실행 통과 · 사용자 **미검증**. 대표 출력(store_test): `used=8 evicted=1 (기대: 8, 1)`
+- **결과**: C 확인용 main은 sanitizer 빌드로 사용자 실행 확인, leaks 0. Python 시연 시나리오([demo.py](/scripts/demo.py) TASK 41개)는 Claude 실행 통과 · 사용자 **미검증**. 대표 출력(store_test): `used=8 evicted=1 (기대: 8, 1)`
 - **관련 파일**
   - C: [LinkedList.c](/c-practice/LinkedList.c) · [HashMap.c](/c-practice/HashMap.c) · [MinHeap.c](/c-practice/MinHeap.c) · [Store.c](/c-practice/Store.c) · 헤더 [LinkedList.h](/c-practice/LinkedList.h) [HashMap.h](/c-practice/HashMap.h) [MinHeap.h](/c-practice/MinHeap.h) [Store.h](/c-practice/Store.h) · 확인용 [hashmap_test.c](/c-practice/hashmap_test.c) [store_test.c](/c-practice/store_test.c)
-  - Python: [python/](/python/) · [tests/](/tests/)
+  - Python: [python/](/python/) · 시연 [demo.py](/scripts/demo.py)
 
 구현 설명은 직접 작성한 C 코드 기준이고, Python과의 차이는 5절에 모았습니다.
 
@@ -433,7 +433,7 @@ store_set c 333   1 + 3 = 4   used=12   lru: HEAD -> [c] <-> [a] <-> [b] <- TAIL
   8 <= 10 -> stop
 ```
 
-store_test의 기대값(LRU `c a`, used 8, evicted 1)과 같습니다. 미션 8절 예시(문자열 value)는 Python에서 11 + 9 + 13 = 33 → TAIL인 user:1 제거 → 22가 되어, 미션 문서의 `used_memory:22`, `evicted_keys:1`과 같습니다(test_store.py의 test_mission_example).
+store_test의 기대값(LRU `c a`, used 8, evicted 1)과 같습니다. 미션 8절 예시(문자열 value)는 Python에서 11 + 9 + 13 = 33 → TAIL인 user:1 제거 → 22가 되어, 미션 문서의 `used_memory:22`, `evicted_keys:1`과 같습니다(시연 시나리오에서도 확인).
 
 > **Q7. SET 한 번에서 used_memory는 어떤 순서로 바뀌고, 왜 OOM 검사를 저장 전에 하나?**
 > 순서: 만료 정리 → new_memory 계산 → OOM 검사 → 기존 키면 prev_memory 계산 → hashmap_put·LRU 갱신 → `used_memory -= prev_memory; += new_memory` → evict_if_needed.
@@ -509,9 +509,9 @@ leaks --atExit -- ./build/store
 **Python (사용자 미검증)**
 
 ```bash
-python3 -m unittest discover -s tests -v
+python3 scripts/demo.py --auto
 ```
-→ 마지막 줄 `Ran 30 tests ... OK`
+→ 마지막 줄 `결과: 41 / 41 통과`
 
 ```bash
 python3 python/main.py
@@ -528,11 +528,10 @@ python3 python/main.py
 | `KEYS *`가 인자 개수 에러 | 패턴 매칭 미구현(미션 범위 밖) | 인자 없이 `KEYS` |
 | 한글 키의 used_memory가 글자 수보다 큼 | Python은 UTF-8 바이트 수로 셈(한글 3바이트) | 정상. 미션 공식 |
 | maxmemory를 낮춰도 키가 그대로 | LRU 제거는 SET 이후에만 실행 | 다음 SET에서 제거됨 |
-| `Ran 0 tests` | 실행 위치나 `-s tests` 누락 | 프로젝트 루트에서 위 명령 실행 |
 
 **미검증·한계**
 
-- Python 전체 unittest와 REPL 시나리오는 Claude만 실행했고 사용자는 미검증입니다. C 최소 힙 확인용 main은 저장소에 남아 있지 않아, 지금은 Python test_min_heap.py로만 다시 확인할 수 있습니다.
+- Python 시연 시나리오와 REPL은 Claude만 실행했고 사용자는 미검증입니다. C 최소 힙 확인용 main은 저장소에 남아 있지 않아, 최소 힙은 시연 시나리오의 TTL 동작으로만 간접 확인됩니다.
 - C는 value가 int이고 CLI가 없어, 문자열 value와 명령 입력은 Python에서만 동작합니다.
 - 만료는 명령이 들어올 때만 정리하며, 백그라운드 정리는 없습니다.
 - 같은 키에 EXPIRE를 반복하면 오래된 힙 항목이 만료 시각까지 남아 힙 크기 m이 커집니다.
