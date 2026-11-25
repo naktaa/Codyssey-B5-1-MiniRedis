@@ -4,14 +4,17 @@ C와 같이 Node는 data만 가리키고, 리스트는 HEAD/TAIL로 양 끝을 �
 C의 free(Node)는 Python에서 참조를 끊는 것으로 대신한다(GC가 회수).
 """
 
+from typing import Optional
+
 
 class Node:
     """리스트의 한 칸. data는 실제 데이터(해시맵의 Data 등)를 가리킨다."""
 
     def __init__(self, data=None):
         self.data = data
-        self.prev = None
-        self.next = None
+        # 타입 표시: None으로 시작해도 편집기가 Node의 prev/next로 알아보게 한다(실행에는 영향 없음).
+        self.prev: Optional["Node"] = None
+        self.next: Optional["Node"] = None
 
 
 class LinkedList:
@@ -21,10 +24,10 @@ class LinkedList:
     """
 
     def __init__(self):
-        self.HEAD = None
-        self.TAIL = None
+        self.HEAD: Optional[Node] = None
+        self.TAIL: Optional[Node] = None
 
-    def insert_front(self, now):
+    def insert_front(self, now: Node):
         """now 노드를 리스트 맨 앞에 붙인다."""
         if self.HEAD is None:
             self.HEAD = self.TAIL = now
@@ -34,7 +37,7 @@ class LinkedList:
             self.HEAD.prev = now
             self.HEAD = now
 
-    def insert_back(self, now):
+    def insert_back(self, now: Node):
         """now 노드를 리스트 맨 뒤에 붙인다."""
         if self.TAIL is None:
             now.prev = now.next = None
@@ -66,7 +69,7 @@ class LinkedList:
                 self.TAIL = self.TAIL.prev
                 self.TAIL.next = None
 
-    def remove_node(self, now):
+    def remove_node(self, now: Node):
         """now 노드를 리스트에서 떼어 낸다. 양 끝이면 remove_front/back을 쓴다."""
         if now is self.HEAD:
             self.remove_front()
@@ -76,7 +79,7 @@ class LinkedList:
             now.prev.next = now.next
             now.next.prev = now.prev
 
-    def move_to_front(self, now):
+    def move_to_front(self, now: Node):
         """이미 리스트에 있는 now 노드를 맨 앞으로 옮긴다. 노드는 새로 만들지 않는다."""
         if self.HEAD is now:
             return

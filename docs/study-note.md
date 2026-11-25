@@ -36,7 +36,7 @@
 
 Python: [linked_list.py](/python/linked_list.py)
 
-**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L8-25](/python/linked_list.py#L8))
+**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L10-28](/python/linked_list.py#L10))
 
 ```text
 HEAD -> [A] <-> [B] <- TAIL
@@ -58,7 +58,7 @@ Node는 prev·next·data 세 필드만 가지고, LinkedList는 HEAD·TAIL 두 �
 | `remove_node(list, now)` | 양 끝은 위 두 함수에 맡기고, 중간은 이웃을 이은 뒤 free | [L64-76](/c-practice/LinkedList.c#L64) |
 | `move_to_front(list, now)` | 떼어서 맨 앞으로 옮김. free하지 않음 | [L78-95](/c-practice/LinkedList.c#L78) |
 
-#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L27-35](/python/linked_list.py#L27))
+#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L30-38](/python/linked_list.py#L30))
 
 새 노드 N의 prev·next를 정하고, 기존 HEAD와 리스트의 HEAD를 N으로 바꿉니다.
 
@@ -70,7 +70,7 @@ changed: N.prev = NULL, N.next = A, A.prev = N, HEAD = N
 
 빈 리스트면 HEAD와 TAIL이 모두 N이 됩니다. insert_back은 방향만 반대입니다.
 
-#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L69-77](/python/linked_list.py#L69))
+#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L72-80](/python/linked_list.py#L72))
 
 중간 노드는 앞뒤 이웃을 서로 이은 뒤 free합니다.
 
@@ -82,7 +82,7 @@ changed: A.next = C (now->prev->next = now->next), C.prev = A (now->next->prev =
 
 now가 HEAD나 TAIL이면 remove_front·remove_back을 불러, HEAD·TAIL 갱신 코드를 한 곳에만 둡니다.
 
-#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L79-92](/python/linked_list.py#L79))
+#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L82-95](/python/linked_list.py#L82))
 
 노드를 새로 만들거나 free하지 않고 연결만 바꿔 맨 앞으로 옮깁니다.
 
@@ -125,7 +125,7 @@ now가 TAIL이면 뒤 이웃이 없으므로 TAIL만 앞으로 당깁니다. 노
 
 Python: [hash_map.py](/python/hash_map.py)
 
-**구조** ([HashMap.h](/c-practice/HashMap.h) [L8-20](/c-practice/HashMap.h#L8) · [hash_map.py](/python/hash_map.py) [L14-31](/python/hash_map.py#L14))
+**구조** ([HashMap.h](/c-practice/HashMap.h) [L8-20](/c-practice/HashMap.h#L8) · [hash_map.py](/python/hash_map.py) [L16-33](/python/hash_map.py#L16))
 
 ```text
 buckets (capacity = 4, count = 3)
@@ -163,7 +163,7 @@ sum = 97 * 31 + 98 = 3105
 bucket = 3105 % capacity(4) = 1
 ```
 
-#### 확장 ([HashMap.c](/c-practice/HashMap.c) [L96-123](/c-practice/HashMap.c#L96) · [hash_map.py](/python/hash_map.py) [L74-93](/python/hash_map.py#L74))
+#### 확장 ([HashMap.c](/c-practice/HashMap.c) [L96-123](/c-practice/HashMap.c#L96) · [hash_map.py](/python/hash_map.py) [L76-95](/python/hash_map.py#L76))
 
 count * 4 > capacity * 3이 되면 버킷을 2배로 늘리고 모든 노드를 새 번호로 옮깁니다.
 

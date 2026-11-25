@@ -6,6 +6,8 @@ C는 순회하며 값을 출력했지만, Python은 방문한 값을 DynamicArra
 C의 tree_free는 GC가 대신하므로 없다.
 """
 
+from typing import Optional
+
 from dynamic_array import DynamicArray
 from linked_list import LinkedList, Node
 
@@ -15,8 +17,8 @@ class TreeNode:
 
     def __init__(self, value):
         self.value = value
-        self.left = None
-        self.right = None
+        self.left: Optional["TreeNode"] = None
+        self.right: Optional["TreeNode"] = None
 
 
 def _build(arr, i):

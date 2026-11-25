@@ -5,6 +5,8 @@ dict·set·내장 hash()는 쓰지 않는다. 버킷 배열은 고정 길이 lis
 확장도 새 배열을 만들어 직접 옮긴다.
 """
 
+from typing import Optional
+
 from linked_list import Node, LinkedList
 
 # C의 size_t(macOS 64비트)와 같은 오버플로 결과를 내기 위한 마스크.
@@ -17,7 +19,7 @@ class Data:
     def __init__(self, key, value):
         self.key = key
         self.value = value
-        self.lru_node = None  # Store의 LRU 리스트에서 이 키를 담은 노드
+        self.lru_node: Optional[Node] = None  # Store의 LRU 리스트에서 이 키를 담은 노드
         self.expire_at = 0    # 만료 시각(ms). 0이면 만료 없음(store.NO_EXPIRE)
 
 
