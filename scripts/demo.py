@@ -162,14 +162,24 @@ def pad(text, n):
 def state_lines(store, pubsub):
     """LRU 순서대로 키·값·크기·TTL과 메모리 상태를 보여 준다. 만료 정리는 하지 않고 있는 그대로 읽는다."""
     now = now_ms()
-    lines = ["Redis 상태   used_memory %d / maxmemory %s   evicted_keys %d   힙 항목 %d" % (
-        store.used_memory, store.maxmemory or "0(무제한)", store.evicted_keys, store.heap.size())]
-    if pubsub.channels.size() > 0:  # 구독한 채널이 있을 때만 (Pub/Sub 시나리오)
-        lines.append("  구독 채널 %d개: %s" % (pubsub.channels.size(), ", ".join(pubsub.channels.keys())))
+    # 위쪽: 메모리·제거·힙·구독 상태를 열이 고정된 파이프 표로 보여 준다.
+    channels = ", ".join(pubsub.channels.keys()) if pubsub.channels.size() > 0 else "(없음)"
+    header = ["used_memory", "maxmemory", "evicted_keys", "힙 항목", "구독 채널"]
+    values = [str(store.used_memory), str(store.maxmemory), str(store.evicted_keys), str(store.heap.size()), channels]
+    # 구독 채널 열은 시나리오에서 가장 긴 "news, sports"(12칸) 폭으로 미리 잡아, 구독이 늘어도 표 폭이 바뀌지 않게 한다.
+    min_widths = [0, 0, 0, 0, width("news, sports")]
+    widths = [max(width(h), width(v), m) for h, v, m in zip(header, values, min_widths)]
+    # 숫자 열은 오른쪽 정렬, 마지막 구독 채널 열만 왼쪽 정렬
+    cells = [" " * (w - width(v)) + v if i < 4 else pad(v, w) for i, (v, w) in enumerate(zip(values, widths))]
+    lines = ["| " + " | ".join(pad(h, w) for h, w in zip(header, widths)) + " |",
+             "|" + "|".join("-" * (w + 2) for w in widths) + "|",
+             "| " + " | ".join(cells) + " |",
+             ""]  # 상태 표와 키 목록을 빈 줄로 구분
+
+    # 아래쪽: 키 목록. 열 이름 줄은 항상 두고, 키가 있을 때만 그 아래에 줄이 생긴다.
+    lines.append("  LRU 순서 (최신 내림차순)")
+    lines.append("     %s %s %s   TTL" % (pad("key", 8), pad("value", 10), pad("크기", 4)))
     node = store.lru.HEAD
-    if node is None:
-        return lines + ["  (비어 있음)"]
-    lines.append("  LRU 순서: 최근 → 오래됨")
     rank = 1
     while node:
         d = node.data
@@ -219,7 +229,6 @@ def render(task, no, store, pubsub, result, new_scen, height):
         print(line)
 
     print(RULE)
-    print("(실행 전)" if result is None else "(실행 후)")
     for line in state_lines(store, pubsub):
         print(line)
     print(RULE)
