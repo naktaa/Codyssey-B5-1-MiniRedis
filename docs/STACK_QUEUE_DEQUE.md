@@ -157,16 +157,16 @@ LRU:  새 키 insert_front, 사용한 키 move_to_front, 메모리 초과 시 TA
 
 | 구조 | 지금 코드 | 코드 | 메모 |
 | --- | --- | --- | --- |
-| 덱 (넣기) | LinkedList.c insert_front · insert_back | [L6-16](/c-practice/LinkedList.c#L6) [L18-28](/c-practice/LinkedList.c#L18) | HEAD = front, TAIL = back |
-| 덱 (빼기) | LinkedList.c remove_front · remove_back | [L30-45](/c-practice/LinkedList.c#L30) [L47-62](/c-practice/LinkedList.c#L47) | prev가 있어 remove_back도 새 TAIL을 바로 찾음 |
-| 스택 | DynamicArray.c append · remove | [L41-57](/c-practice/DynamicArray.c#L41) [L94-106](/c-practice/DynamicArray.c#L94) | 끝 칸에서만 넣고 빼면 당길 원소가 없음 |
+| 덱 (넣기) | LinkedList.c insert_front · insert_back | [L6-16](/c-practice/src/LinkedList.c#L6) [L18-28](/c-practice/src/LinkedList.c#L18) | HEAD = front, TAIL = back |
+| 덱 (빼기) | LinkedList.c remove_front · remove_back | [L30-45](/c-practice/src/LinkedList.c#L30) [L47-62](/c-practice/src/LinkedList.c#L47) | prev가 있어 remove_back도 새 TAIL을 바로 찾음 |
+| 스택 | DynamicArray.c append · remove | [L41-57](/c-practice/src/DynamicArray.c#L41) [L94-106](/c-practice/src/DynamicArray.c#L94) | 끝 칸에서만 넣고 빼면 당길 원소가 없음 |
 | 스택 연산을 쓰는 곳 | min_heap.py pop의 끝 칸 remove | [L75](/python/min_heap.py#L75) | 힙 pop이 마지막 칸을 스택처럼 떼어 냄 |
-| 우선순위 큐 | MinHeap.c push · pop | [L99-121](/c-practice/MinHeap.c#L99) [L129-139](/c-practice/MinHeap.c#L129) | 들어온 순서가 아니라 expire_at이 작은 순서로 나옴 |
-| 덱 + 중간 이동 | Store.c LRU: 새 키 insert_front, SET·GET move_to_front, TAIL 제거 | [L136](/c-practice/Store.c#L136) [L139](/c-practice/Store.c#L139) [L159](/c-practice/Store.c#L159) [L57-58](/c-practice/Store.c#L57) | 덱 연산만으로는 중간 노드를 앞으로 옮길 수 없음 |
+| 우선순위 큐 | MinHeap.c push · pop | [L99-121](/c-practice/src/MinHeap.c#L99) [L129-139](/c-practice/src/MinHeap.c#L129) | 들어온 순서가 아니라 expire_at이 작은 순서로 나옴 |
+| 덱 + 중간 이동 | Store.c LRU: 새 키 insert_front, SET·GET move_to_front, TAIL 제거 | [L136](/c-practice/src/Store.c#L136) [L139](/c-practice/src/Store.c#L139) [L159](/c-practice/src/Store.c#L159) [L57-58](/c-practice/src/Store.c#L57) | 덱 연산만으로는 중간 노드를 앞으로 옮길 수 없음 |
 
-**주의할 점: `remove_front`는 data를 돌려주지 않습니다.** ([LinkedList.c](/c-practice/LinkedList.c) [L30-45](/c-practice/LinkedList.c#L30)) 노드를 떼어 Node만 해제하므로, 큐의 dequeue처럼 꺼낸 값이 필요하면 remove_front를 부르기 **전에** HEAD의 data를 먼저 읽어 둬야 합니다. 해시맵 remove가 remove_node 전에 Data 주소를 꺼내 두는 것과 같은 이유입니다([HashMap.c](/c-practice/HashMap.c) [L159-161](/c-practice/HashMap.c#L159)). data 자체는 해제되지 않으므로 data의 주인이 따로 해제해야 합니다.
+**주의할 점: `remove_front`는 data를 돌려주지 않습니다.** ([LinkedList.c](/c-practice/src/LinkedList.c) [L30-45](/c-practice/src/LinkedList.c#L30)) 노드를 떼어 Node만 해제하므로, 큐의 dequeue처럼 꺼낸 값이 필요하면 remove_front를 부르기 **전에** HEAD의 data를 먼저 읽어 둬야 합니다. 해시맵 remove가 remove_node 전에 Data 주소를 꺼내 두는 것과 같은 이유입니다([HashMap.c](/c-practice/src/HashMap.c) [L159-161](/c-practice/src/HashMap.c#L159)). data 자체는 해제되지 않으므로 data의 주인이 따로 해제해야 합니다.
 
 ## 6. 다음 보너스와 연결
 
 - 보너스 3 레벨 순회: 방문할 노드를 큐에 넣고 front부터 꺼냅니다. `collections`를 못 쓰므로 LinkedList의 insert_back + remove_front를 큐로 씁니다.
-- 보너스 5 Pub/Sub: 받은 메시지 큐(inbox)를 LinkedList로 두고, PUBLISH는 rear(insert_back)에 넣고, 읽을 때는 front(remove_front)부터 꺼냅니다. 서버가 없어 구독자는 REPL 하나뿐이라 큐도 하나입니다([PubSub.c](/c-practice/PubSub.c) [L41](/c-practice/PubSub.c#L41) [L46-54](/c-practice/PubSub.c#L46)).
+- 보너스 5 Pub/Sub: 받은 메시지 큐(inbox)를 LinkedList로 두고, PUBLISH는 rear(insert_back)에 넣고, 읽을 때는 front(remove_front)부터 꺼냅니다. 서버가 없어 구독자는 REPL 하나뿐이라 큐도 하나입니다([PubSub.c](/c-practice/src/PubSub.c) [L41](/c-practice/src/PubSub.c#L41) [L46-54](/c-practice/src/PubSub.c#L46)).

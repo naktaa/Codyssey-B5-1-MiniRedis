@@ -2,8 +2,6 @@
 
 해시맵·이중 연결 리스트·최소 힙을 직접 구현해 만든 CLI Mini Redis입니다. LRU 제거, TTL 만료, 메모리 제한, Pub/Sub을 지원합니다.
 
-![Store 자료구조 관계](images/store-structure.svg)
-
 ## 구조
 
 ```text
@@ -23,9 +21,12 @@ python3 python/main.py          # CLI
 python3 scripts/demo.py         # 시연 (엔터로 한 단계씩, --auto: 끝까지 자동)
 ```
 
+## 자료구조
+![Store 자료구조 관계](images/store-structure2.png)
+
 ## 기능과 사용법
 
-![명령 처리 흐름](images/pipeline.svg)
+![명령 처리 흐름](images/pipeline2.png)
 
 공백이 있는 값은 큰따옴표로 감쌉니다: `SET user:1 "Alice Kim"`. 명령 이름은 대소문자를 구분하지 않습니다.
 

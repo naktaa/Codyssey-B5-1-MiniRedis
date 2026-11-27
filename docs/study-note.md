@@ -6,16 +6,16 @@
 - **기능**: `SET` `GET` `DEL` `EXISTS` `DBSIZE` `KEYS` · `CONFIG SET maxmemory` `INFO memory` · `EXPIRE` `TTL` (+ `exit`/`quit`) · 보너스 `SUBSCRIBE` `PUBLISH`
 - **결과**: C 확인용 main은 sanitizer 빌드로 사용자 실행 확인, leaks 0. Python 시연 시나리오([demo.py](/scripts/demo.py) TASK 52개)는 Claude 실행 통과 · 사용자 **미검증**. 대표 출력(store_test): `used=8 evicted=1 (기대: 8, 1)`
 - **관련 파일**
-  - C: [LinkedList.c](/c-practice/LinkedList.c) · [HashMap.c](/c-practice/HashMap.c) · [MinHeap.c](/c-practice/MinHeap.c) · [Store.c](/c-practice/Store.c) · 헤더 [LinkedList.h](/c-practice/LinkedList.h) [HashMap.h](/c-practice/HashMap.h) [MinHeap.h](/c-practice/MinHeap.h) [Store.h](/c-practice/Store.h) · 확인용 [hashmap_test.c](/c-practice/hashmap_test.c) [store_test.c](/c-practice/store_test.c)
+  - C: [LinkedList.c](/c-practice/src/LinkedList.c) · [HashMap.c](/c-practice/src/HashMap.c) · [MinHeap.c](/c-practice/src/MinHeap.c) · [Store.c](/c-practice/src/Store.c) · 헤더 [LinkedList.h](/c-practice/include/LinkedList.h) [HashMap.h](/c-practice/include/HashMap.h) [MinHeap.h](/c-practice/include/MinHeap.h) [Store.h](/c-practice/include/Store.h) · 확인용 [hashmap_test.c](/c-practice/src/hashmap_test.c) [store_test.c](/c-practice/src/store_test.c)
   - Python: [python/](/python/) · 시연 [demo.py](/scripts/demo.py)
 
 구현 설명은 직접 작성한 C 코드 기준이고, Python과의 차이는 5절, 보너스는 7절에 모았습니다.
 
 ## 2. 구조
 
-흐름: 확인용 main([store_test.c](/c-practice/store_test.c)) → `store_*` 함수([Store.c](/c-practice/Store.c)) → HashMap.c · LinkedList.c · MinHeap.c. CLI는 Python([main.py](/python/main.py))에만 있습니다.
+흐름: 확인용 main([store_test.c](/c-practice/src/store_test.c)) → `store_*` 함수([Store.c](/c-practice/src/Store.c)) → HashMap.c · LinkedList.c · MinHeap.c. CLI는 Python([main.py](/python/main.py))에만 있습니다.
 
-![Store 자료구조 관계](/images/store-structure.svg)
+![Store 자료구조 관계](/images/store-structure2.png)
 
 | 구성 요소 | 자료구조 | 하는 일 | 소유(해제 책임) |
 | --- | --- | --- | --- |
@@ -31,7 +31,7 @@
 
 Python: [linked_list.py](/python/linked_list.py)
 
-**구조** ([LinkedList.h](/c-practice/LinkedList.h) [L7-16](/c-practice/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L14-32](/python/linked_list.py#L14))
+**구조** ([LinkedList.h](/c-practice/include/LinkedList.h) [L7-16](/c-practice/include/LinkedList.h#L7) · [linked_list.py](/python/linked_list.py) [L14-32](/python/linked_list.py#L14))
 
 ```text
 HEAD -> [A] <-> [B] <- TAIL
@@ -46,14 +46,14 @@ Node는 prev·next·data 세 필드만 가지고, LinkedList는 HEAD·TAIL 두 �
 
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
-| `insert_front(list, now)` | now를 맨 앞에 붙임 | [L6-16](/c-practice/LinkedList.c#L6) |
-| `insert_back(list, now)` | now를 맨 뒤에 붙임 | [L18-28](/c-practice/LinkedList.c#L18) |
-| `remove_front(list)` | 맨 앞 노드를 떼고 free. 빈 리스트면 그대로 | [L30-45](/c-practice/LinkedList.c#L30) |
-| `remove_back(list)` | 맨 뒤 노드를 떼고 free. 빈 리스트면 그대로 | [L47-62](/c-practice/LinkedList.c#L47) |
-| `remove_node(list, now)` | 양 끝은 위 두 함수에 맡기고, 중간은 이웃을 이은 뒤 free | [L64-76](/c-practice/LinkedList.c#L64) |
-| `move_to_front(list, now)` | 떼어서 맨 앞으로 옮김. free하지 않음 | [L78-95](/c-practice/LinkedList.c#L78) |
+| `insert_front(list, now)` | now를 맨 앞에 붙임 | [L6-16](/c-practice/src/LinkedList.c#L6) |
+| `insert_back(list, now)` | now를 맨 뒤에 붙임 | [L18-28](/c-practice/src/LinkedList.c#L18) |
+| `remove_front(list)` | 맨 앞 노드를 떼고 free. 빈 리스트면 그대로 | [L30-45](/c-practice/src/LinkedList.c#L30) |
+| `remove_back(list)` | 맨 뒤 노드를 떼고 free. 빈 리스트면 그대로 | [L47-62](/c-practice/src/LinkedList.c#L47) |
+| `remove_node(list, now)` | 양 끝은 위 두 함수에 맡기고, 중간은 이웃을 이은 뒤 free | [L64-76](/c-practice/src/LinkedList.c#L64) |
+| `move_to_front(list, now)` | 떼어서 맨 앞으로 옮김. free하지 않음 | [L78-95](/c-practice/src/LinkedList.c#L78) |
 
-#### insert_front ([LinkedList.c](/c-practice/LinkedList.c) [L6-16](/c-practice/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L34-42](/python/linked_list.py#L34))
+#### insert_front ([LinkedList.c](/c-practice/src/LinkedList.c) [L6-16](/c-practice/src/LinkedList.c#L6) · [linked_list.py](/python/linked_list.py) [L34-42](/python/linked_list.py#L34))
 
 새 노드 N의 prev·next를 정하고, 기존 HEAD와 리스트의 HEAD를 N으로 바꿉니다.
 
@@ -65,7 +65,7 @@ changed: N.prev = NULL, N.next = A, A.prev = N, HEAD = N
 
 빈 리스트면 HEAD와 TAIL이 모두 N이 됩니다. insert_back은 방향만 반대입니다.
 
-#### remove_node ([LinkedList.c](/c-practice/LinkedList.c) [L64-76](/c-practice/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L76-84](/python/linked_list.py#L76))
+#### remove_node ([LinkedList.c](/c-practice/src/LinkedList.c) [L64-76](/c-practice/src/LinkedList.c#L64) · [linked_list.py](/python/linked_list.py) [L76-84](/python/linked_list.py#L76))
 
 중간 노드는 앞뒤 이웃을 서로 이은 뒤 free합니다.
 
@@ -77,7 +77,7 @@ changed: A.next = C (now->prev->next = now->next), C.prev = A (now->next->prev =
 
 now가 HEAD나 TAIL이면 remove_front·remove_back을 불러, HEAD·TAIL 갱신 코드를 한 곳에만 둡니다.
 
-#### move_to_front ([LinkedList.c](/c-practice/LinkedList.c) [L78-95](/c-practice/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L86-99](/python/linked_list.py#L86))
+#### move_to_front ([LinkedList.c](/c-practice/src/LinkedList.c) [L78-95](/c-practice/src/LinkedList.c#L78) · [linked_list.py](/python/linked_list.py) [L86-99](/python/linked_list.py#L86))
 
 노드를 새로 만들거나 free하지 않고 연결만 바꿔 맨 앞으로 옮깁니다.
 
@@ -112,7 +112,7 @@ now가 TAIL이면 뒤 이웃이 없으므로 TAIL만 앞으로 당깁니다. 노
 > **Q4. 왜 단일 연결이 아니라 이중 연결(prev)이어야 하나?**
 > 노드를 떼려면 앞 노드의 next를 바꿔야 하는데, prev가 없으면 앞 노드를 찾으려고 HEAD부터 O(n)을 걸어야 합니다.
 > remove_back도 새 TAIL을 `list->TAIL->prev`로 바로 구합니다.
-> LRU는 TAIL 제거와 중간 노드 이동이 계속 일어나므로 prev가 O(1)의 조건입니다. ([LinkedList.c](/c-practice/LinkedList.c) [L57](/c-practice/LinkedList.c#L57), [L72-73](/c-practice/LinkedList.c#L72))
+> LRU는 TAIL 제거와 중간 노드 이동이 계속 일어나므로 prev가 O(1)의 조건입니다. ([LinkedList.c](/c-practice/src/LinkedList.c) [L57](/c-practice/src/LinkedList.c#L57), [L72-73](/c-practice/src/LinkedList.c#L72))
 
 **복잡도**: 노드를 이미 알고 있을 때 6개 연산 모두 O(1)입니다. key로 노드를 찾아야 하면 처음부터 걸어야 하므로 O(n)입니다. 이 차이 때문에 4.1의 `Data.lru_node`가 필요합니다.
 
@@ -120,7 +120,7 @@ now가 TAIL이면 뒤 이웃이 없으므로 TAIL만 앞으로 당깁니다. 노
 
 Python: [hash_map.py](/python/hash_map.py)
 
-**구조** ([HashMap.h](/c-practice/HashMap.h) [L8-20](/c-practice/HashMap.h#L8) · [hash_map.py](/python/hash_map.py) [L16-33](/python/hash_map.py#L16))
+**구조** ([HashMap.h](/c-practice/include/HashMap.h) [L8-20](/c-practice/include/HashMap.h#L8) · [hash_map.py](/python/hash_map.py) [L16-33](/python/hash_map.py#L16))
 
 ```text
 buckets (capacity = 4, count = 3)
@@ -138,13 +138,13 @@ buckets는 `LinkedList` 배열이고 각 칸이 3.1의 리스트입니다. 빈 �
 
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
-| `hashmap_hash(key)` | key 바이트에 31을 곱하며 더한 size_t 값 | [L18-27](/c-practice/HashMap.c#L18) |
-| `hashmap_find_node(map, key, out_list)` | 체인을 돌며 strcmp로 찾음. 못 찾아도 버킷 주소는 넘겨 줌 | [L34-50](/c-practice/HashMap.c#L34) |
-| `hashmap_put(map, key, value)` | 있으면 값만 교체, 없으면 Data·key·Node를 할당해 버킷 끝에 추가 | [L59-94](/c-practice/HashMap.c#L59) |
-| `hashmap_remove(map, key)` | 노드를 떼고 key → Data 순으로 free, count - 1 | [L152-167](/c-practice/HashMap.c#L152) |
+| `hashmap_hash(key)` | key 바이트에 31을 곱하며 더한 size_t 값 | [L18-27](/c-practice/src/HashMap.c#L18) |
+| `hashmap_find_node(map, key, out_list)` | 체인을 돌며 strcmp로 찾음. 못 찾아도 버킷 주소는 넘겨 줌 | [L34-50](/c-practice/src/HashMap.c#L34) |
+| `hashmap_put(map, key, value)` | 있으면 값만 교체, 없으면 Data·key·Node를 할당해 버킷 끝에 추가 | [L59-94](/c-practice/src/HashMap.c#L59) |
+| `hashmap_remove(map, key)` | 노드를 떼고 key → Data 순으로 free, count - 1 | [L152-167](/c-practice/src/HashMap.c#L152) |
 | `hashmap_get` · `hashmap_contains` · `hashmap_get_data` | 모두 hashmap_find_node로 찾음 | - |
-| `hashmap_keys(map)` | 모든 버킷을 돌며 key를 출력 | [L182-196](/c-practice/HashMap.c#L182) |
-| `hashmap_free(map)` | 모든 노드의 key → Data → Node, 마지막에 버킷 배열 free | [L219-234](/c-practice/HashMap.c#L219) |
+| `hashmap_keys(map)` | 모든 버킷을 돌며 key를 출력 | [L182-196](/c-practice/src/HashMap.c#L182) |
+| `hashmap_free(map)` | 모든 노드의 key → Data → Node, 마지막에 버킷 배열 free | [L219-234](/c-practice/src/HashMap.c#L219) |
 
 #### 해시 계산 예
 
@@ -158,7 +158,7 @@ sum = 97 * 31 + 98 = 3105
 bucket = 3105 % capacity(4) = 1
 ```
 
-#### 확장 ([HashMap.c](/c-practice/HashMap.c) [L96-123](/c-practice/HashMap.c#L96) · [hash_map.py](/python/hash_map.py) [L76-95](/python/hash_map.py#L76))
+#### 확장 ([HashMap.c](/c-practice/src/HashMap.c) [L96-123](/c-practice/src/HashMap.c#L96) · [hash_map.py](/python/hash_map.py) [L76-95](/python/hash_map.py#L76))
 
 count * 4 > capacity * 3이 되면 버킷을 2배로 늘리고 모든 노드를 새 번호로 옮깁니다.
 
@@ -204,12 +204,12 @@ after (capacity 8)
 > **Q1. 왜 31을 곱해 누적하고, 왜 문자가 아니라 바이트(`unsigned char`)를 쓰나?**
 > 곱하며 누적하면 글자 순서가 결과에 반영되어 "ab"(3105)와 "ba"(3135)가 달라지고, 31은 홀수 소수라 값이 고르게 퍼집니다.
 > char는 부호가 있을 수 있어 한글처럼 128 이상인 바이트가 음수가 되므로, `unsigned char`로 바꿔 0~255로 누적합니다. size_t는 부호 없는 정수라 overflow하면 2^64로 나눈 나머지로 감기므로 그대로 써도 됩니다.
-> Python 정수는 overflow가 없어 같은 값을 내려면 매 단계 64비트로 잘라야 합니다(5절). ([HashMap.c](/c-practice/HashMap.c) [L21-24](/c-practice/HashMap.c#L21))
+> Python 정수는 overflow가 없어 같은 값을 내려면 매 단계 64비트로 잘라야 합니다(5절). ([HashMap.c](/c-practice/src/HashMap.c) [L21-24](/c-practice/src/HashMap.c#L21))
 
 > **Q2. 왜 로드 팩터 0.75를 넘으면 2배로 늘리고, 확장 때 모든 노드를 다시 배치하나?**
 > 로드 팩터(count / capacity)가 커지면 체인이 길어지는데, 2배씩 늘리면 확장 비용 O(n)이 여러 번의 put에 나뉘어 평균 O(1)이 유지됩니다.
 > count / capacity > 0.75의 양변에 4 × capacity를 곱하면 `map->count * 4 > map->capacity * 3`이 되므로 두 조건은 같고, 정수 비교라 실수 오차가 없습니다.
-> 버킷 번호는 hash % capacity라 capacity가 바뀌면 번호도 바뀌므로, 모든 노드를 새 번호로 옮겨야 다시 찾을 수 있습니다. ([HashMap.c](/c-practice/HashMap.c) [L97](/c-practice/HashMap.c#L97), [L111](/c-practice/HashMap.c#L111))
+> 버킷 번호는 hash % capacity라 capacity가 바뀌면 번호도 바뀌므로, 모든 노드를 새 번호로 옮겨야 다시 찾을 수 있습니다. ([HashMap.c](/c-practice/src/HashMap.c) [L97](/c-practice/src/HashMap.c#L97), [L111](/c-practice/src/HashMap.c#L111))
 
 **복잡도**: put·get·remove·contains는 평균 O(1)이고, 모든 키가 한 버킷에 몰리면 최악 O(n)입니다. 확장은 O(n)이지만 2배씩 늘어 평균 O(1)이고, keys와 free는 O(capacity + n)입니다.
 
@@ -217,7 +217,7 @@ after (capacity 8)
 
 Python: [min_heap.py](/python/min_heap.py)
 
-**구조** ([MinHeap.h](/c-practice/MinHeap.h) [L9-18](/c-practice/MinHeap.h#L9) · [min_heap.py](/python/min_heap.py) [L12-25](/python/min_heap.py#L12))
+**구조** ([MinHeap.h](/c-practice/include/MinHeap.h) [L9-18](/c-practice/include/MinHeap.h#L9) · [min_heap.py](/python/min_heap.py) [L12-25](/python/min_heap.py#L12))
 
 ```text
 items (array)   idx:   0    1    2    3
@@ -238,14 +238,14 @@ parent = (i - 1) / 2,  left = 2i + 1,  right = 2i + 2
 
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
-| `minheap_init(heap, capacity)` | capacity칸 배열을 malloc, size 0 | [L69-80](/c-practice/MinHeap.c#L69) |
-| `minheap_push(heap, expire_at, key)` | 가득 차면 realloc 2배, key를 복사해 끝에 넣고 위로 올림 | [L99-121](/c-practice/MinHeap.c#L99) |
-| `minheap_pop(heap, out_item)` | items[0]을 넘기고, 마지막 항목을 0번으로 옮겨 아래로 내림 | [L129-139](/c-practice/MinHeap.c#L129) |
-| `minheap_peek(heap, out_item)` | items[0]을 복사해 넘김. key는 빌린 주소 | [L147-153](/c-practice/MinHeap.c#L147) |
-| `minheap_size(heap)` | 저장된 항목 개수 | [L156-158](/c-practice/MinHeap.c#L156) |
-| `minheap_free(heap)` | 남은 항목의 key를 모두 free한 뒤 배열 free | [L86-91](/c-practice/MinHeap.c#L86) |
+| `minheap_init(heap, capacity)` | capacity칸 배열을 malloc, size 0 | [L69-80](/c-practice/src/MinHeap.c#L69) |
+| `minheap_push(heap, expire_at, key)` | 가득 차면 realloc 2배, key를 복사해 끝에 넣고 위로 올림 | [L99-121](/c-practice/src/MinHeap.c#L99) |
+| `minheap_pop(heap, out_item)` | items[0]을 넘기고, 마지막 항목을 0번으로 옮겨 아래로 내림 | [L129-139](/c-practice/src/MinHeap.c#L129) |
+| `minheap_peek(heap, out_item)` | items[0]을 복사해 넘김. key는 빌린 주소 | [L147-153](/c-practice/src/MinHeap.c#L147) |
+| `minheap_size(heap)` | 저장된 항목 개수 | [L156-158](/c-practice/src/MinHeap.c#L156) |
+| `minheap_free(heap)` | 남은 항목의 key를 모두 free한 뒤 배열 free | [L86-91](/c-practice/src/MinHeap.c#L86) |
 
-#### push → _heapify_up ([MinHeap.c](/c-practice/MinHeap.c) [L25-35](/c-practice/MinHeap.c#L25) · [min_heap.py](/python/min_heap.py) [L27-37](/python/min_heap.py#L27))
+#### push → _heapify_up ([MinHeap.c](/c-practice/src/MinHeap.c) [L25-35](/c-practice/src/MinHeap.c#L25) · [min_heap.py](/python/min_heap.py) [L27-37](/python/min_heap.py#L27))
 
 배열 끝에 넣고, 부모보다 작으면 자리를 바꾸며 올라갑니다.
 
@@ -258,7 +258,7 @@ push 10 at idx 3: [30] [50] [40] [10]
 
 i가 size_t라 0에서 1을 빼면 아주 큰 수가 되므로, `while (i > 0)`으로 먼저 확인한 뒤 부모 인덱스를 계산합니다.
 
-#### pop → _heapify_down ([MinHeap.c](/c-practice/MinHeap.c) [L43-62](/c-practice/MinHeap.c#L43) · [min_heap.py](/python/min_heap.py) [L39-56](/python/min_heap.py#L39))
+#### pop → _heapify_down ([MinHeap.c](/c-practice/src/MinHeap.c) [L43-62](/c-practice/src/MinHeap.c#L43) · [min_heap.py](/python/min_heap.py) [L39-56](/python/min_heap.py#L39))
 
 items[0]을 넘기고, 마지막 항목을 0번으로 옮긴 뒤 더 작은 자식과 바꾸며 내려갑니다.
 
@@ -294,7 +294,7 @@ idx 1 has no child (2*1+1 = 3 >= size): stop
 
 > **Q5. 왜 정렬된 리스트나 전체 순회 대신 최소 힙인가?**
 > TTL 처리에 필요한 것은 "지금 가장 먼저 만료되는 키"를 반복해서 아는 것뿐이고, 전체 정렬은 필요 없습니다.
-> 정렬 배열은 삽입마다 O(n) 이동이 들고, 매 명령마다 전체 키를 훑으면 O(n)입니다. 힙은 peek O(1), push·pop O(log n)으로 이 질문에만 빠르게 답합니다. ([MinHeap.c](/c-practice/MinHeap.c) [L147-153](/c-practice/MinHeap.c#L147))
+> 정렬 배열은 삽입마다 O(n) 이동이 들고, 매 명령마다 전체 키를 훑으면 O(n)입니다. 힙은 peek O(1), push·pop O(log n)으로 이 질문에만 빠르게 답합니다. ([MinHeap.c](/c-practice/src/MinHeap.c) [L147-153](/c-practice/src/MinHeap.c#L147))
 
 **복잡도**: peek·size O(1), push·pop O(log n). 확장은 O(n)이지만 2배씩 늘어 평균 O(1)이 더해질 뿐입니다.
 
@@ -302,7 +302,7 @@ idx 1 has no child (2*1+1 = 3 >= size): stop
 
 Python: [store.py](/python/store.py)
 
-[Store.h](/c-practice/Store.h)의 `Store` 구조체가 세 자료구조와 used_memory·maxmemory·evicted_keys를 가집니다. 모든 store 함수는 맨 앞에서 expire_if_needed를 부르고, 해시맵은 LRU·TTL을 모르며 그 갱신은 모두 Store.c가 합니다.
+[Store.h](/c-practice/include/Store.h)의 `Store` 구조체가 세 자료구조와 used_memory·maxmemory·evicted_keys를 가집니다. 모든 store 함수는 맨 앞에서 expire_if_needed를 부르고, 해시맵은 LRU·TTL을 모르며 그 갱신은 모두 Store.c가 합니다.
 
 ### 4.1 LRU (map + list)
 
@@ -325,11 +325,11 @@ lru:             HEAD -> [x] <-> [k] <-> [y] <- TAIL
 
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
-| `store_set` 새 키 | hashmap_put 후 LRU Node를 malloc, Data와 서로 연결하고 insert_front | [L126-137](/c-practice/Store.c#L126) |
-| `store_set` 기존 키 | lru_node로 바로 move_to_front, TTL 없앰 | [L138-141](/c-practice/Store.c#L138) |
-| `store_get` | 찾았을 때만 move_to_front 후 값 전달, 없으면 0 | [L154-163](/c-practice/Store.c#L154) |
-| `hashmap_contains` | get을 부르지 않아 LRU를 바꾸지 않음 | [L173-176](/c-practice/HashMap.c#L173) |
-| `store_free` | LRU Node만 free한 뒤 hashmap_free, minheap_free | [L239-250](/c-practice/Store.c#L239) |
+| `store_set` 새 키 | hashmap_put 후 LRU Node를 malloc, Data와 서로 연결하고 insert_front | [L126-137](/c-practice/src/Store.c#L126) |
+| `store_set` 기존 키 | lru_node로 바로 move_to_front, TTL 없앰 | [L138-141](/c-practice/src/Store.c#L138) |
+| `store_get` | 찾았을 때만 move_to_front 후 값 전달, 없으면 0 | [L154-163](/c-practice/src/Store.c#L154) |
+| `hashmap_contains` | get을 부르지 않아 LRU를 바꾸지 않음 | [L173-176](/c-practice/src/HashMap.c#L173) |
+| `store_free` | LRU Node만 free한 뒤 hashmap_free, minheap_free | [L239-250](/c-practice/src/Store.c#L239) |
 
 ```c
     if (data == NULL) {
@@ -353,7 +353,7 @@ LRU Node 할당이 실패하면 방금 넣은 키를 hashmap_remove로 되돌려
 
 > **Q3. 왜 해시맵만으로도, 리스트만으로도 O(1) LRU가 안 되나?**
 > 해시맵은 키를 빨리 찾지만 사용 순서가 없어서, 가장 오래된 키를 찾으려면 전부 훑어야 합니다(O(n)). 리스트는 순서가 있지만 key로 노드를 찾으려면 O(n)입니다(3.1 복잡도).
-> 둘을 합치고 `Data.lru_node`로 연결하면 hashmap_get_data(평균 O(1)) → lru_node(O(1)) → move_to_front·remove_node(O(1))가 되어 전체가 O(1)입니다. ([Store.c](/c-practice/Store.c) [L139](/c-practice/Store.c#L139), [L159](/c-practice/Store.c#L159))
+> 둘을 합치고 `Data.lru_node`로 연결하면 hashmap_get_data(평균 O(1)) → lru_node(O(1)) → move_to_front·remove_node(O(1))가 되어 전체가 O(1)입니다. ([Store.c](/c-practice/src/Store.c) [L139](/c-practice/src/Store.c#L139), [L159](/c-practice/src/Store.c#L159))
 
 ### 4.2 TTL (heap + lazy deletion)
 
@@ -361,14 +361,14 @@ Python: [store.py](/python/store.py) expire [L142-159](/python/store.py#L142) ·
 
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
-| `store_expire` | 없으면 0, 0 이하면 delete_data, 아니면 힙에 push하고 expire_at 기록 | [L192-209](/c-practice/Store.c#L192) |
-| `store_ttl` | 없으면 -2, NO_EXPIRE면 -1, 아니면 남은 ms / 1000을 out_ttl로 | [L216-232](/c-practice/Store.c#L216) |
-| `store_set` 덮어쓰기 | expire_at을 NO_EXPIRE(0)로 바꿔 TTL 삭제 | [L140](/c-practice/Store.c#L140) |
-| `expire_if_needed` | 힙 맨 위부터 만료된 항목을 꺼내 진짜 만료만 지움 | [L70-90](/c-practice/Store.c#L70) |
+| `store_expire` | 없으면 0, 0 이하면 delete_data, 아니면 힙에 push하고 expire_at 기록 | [L192-209](/c-practice/src/Store.c#L192) |
+| `store_ttl` | 없으면 -2, NO_EXPIRE면 -1, 아니면 남은 ms / 1000을 out_ttl로 | [L216-232](/c-practice/src/Store.c#L216) |
+| `store_set` 덮어쓰기 | expire_at을 NO_EXPIRE(0)로 바꿔 TTL 삭제 | [L140](/c-practice/src/Store.c#L140) |
+| `expire_if_needed` | 힙 맨 위부터 만료된 항목을 꺼내 진짜 만료만 지움 | [L70-90](/c-practice/src/Store.c#L70) |
 
 store_expire는 힙 push를 먼저 하고 성공했을 때만 expire_at을 바꾸므로, push가 실패하면 이전 TTL이 그대로 남습니다. -2·-1도 Redis 응답 값이라, 반환값이 아니라 out_ttl로 넘기고 반환값은 성공·에러만 나타냅니다.
 
-**만료 정리** ([Store.c](/c-practice/Store.c) [L70-90](/c-practice/Store.c#L70) · [store.py](/python/store.py) [L65-83](/python/store.py#L65))
+**만료 정리** ([Store.c](/c-practice/src/Store.c) [L70-90](/c-practice/src/Store.c#L70) · [store.py](/python/store.py) [L65-83](/python/store.py#L65))
 
 ```c
     while (1) {
@@ -390,7 +390,7 @@ store_expire는 힙 push를 먼저 하고 성공했을 때만 expire_at을 바�
 
 힙 맨 위가 아직 안 지났으면 나머지도 안 지났으므로 바로 멈춥니다. 맨 위가 지났으면 꺼내서, 해시맵의 현재 expire_at과 같을 때만 진짜 만료로 지웁니다. pop으로 key 소유권을 받았으므로, 지웠든 버렸든 마지막에 `free(item.key)`를 합니다.
 
-**오래된 항목을 버리는 예** ([store_test.c](/c-practice/store_test.c) [L172-179](/c-practice/store_test.c#L172))
+**오래된 항목을 버리는 예** ([store_test.c](/c-practice/src/store_test.c) [L172-179](/c-practice/src/store_test.c#L172))
 
 ```text
 now=3000  SET b; EXPIRE b 10   -> heap: [(13000,b)]               b.expire_at=13000
@@ -407,7 +407,7 @@ SET으로 덮어쓰면 expire_at이 NO_EXPIRE가 되므로, 힙에 남은 예전
 
 > **Q6. 왜 EXPIRE를 다시 걸거나 DEL할 때 힙에서 바로 지우지 않고 나중에 버리나?**
 > 힙은 맨 위만 빨리 알 수 있고, 특정 key가 배열 어디에 있는지는 O(m)으로 찾아야 합니다. 찾은 뒤에도 자리를 다시 맞춰야 합니다.
-> 대신 꺼낼 때 expire_at을 비교하면 재설정·SET 덮어쓰기·DEL·DEL 후 같은 이름 재SET이 모두 한 줄로 걸러집니다. ([Store.c](/c-practice/Store.c) [L84](/c-practice/Store.c#L84))
+> 대신 꺼낼 때 expire_at을 비교하면 재설정·SET 덮어쓰기·DEL·DEL 후 같은 이름 재SET이 모두 한 줄로 걸러집니다. ([Store.c](/c-practice/src/Store.c) [L84](/c-practice/src/Store.c#L84))
 
 ### 4.3 메모리 제한과 TAIL 제거
 
@@ -415,13 +415,13 @@ Python: [store.py](/python/store.py) _entry_size [L45-48](/python/store.py#L45) 
 
 | 연산 | 하는 일 | 코드 |
 | --- | --- | --- |
-| `entry_size(key, value)` | `strlen(key)` + value의 10진수 자릿수 | [L32-34](/c-practice/Store.c#L32) |
-| `delete_data(store, data)` | used_memory 감소 → LRU 노드 제거 → hashmap_remove | [L42-49](/c-practice/Store.c#L42) |
-| `evict_if_needed(store)` | 제한을 넘는 동안 TAIL의 Data를 delete_data, evicted_keys + 1 | [L56-61](/c-practice/Store.c#L56) |
+| `entry_size(key, value)` | `strlen(key)` + value의 10진수 자릿수 | [L32-34](/c-practice/src/Store.c#L32) |
+| `delete_data(store, data)` | used_memory 감소 → LRU 노드 제거 → hashmap_remove | [L42-49](/c-practice/src/Store.c#L42) |
+| `evict_if_needed(store)` | 제한을 넘는 동안 TAIL의 Data를 delete_data, evicted_keys + 1 | [L56-61](/c-practice/src/Store.c#L56) |
 
 C는 value가 int라 크기를 자릿수로 대신하고(-5 → 2), Python은 미션 공식대로 value 문자열의 UTF-8 바이트 수를 씁니다. delete_data는 DEL·EXPIRE 0·TTL 만료·LRU 제거가 함께 쓰므로 used_memory 감소가 이 한 곳에만 있습니다. hashmap_remove가 data와 key를 free하므로 그 호출이 마지막이고, 그 뒤에는 data를 읽지 않습니다.
 
-**TAIL부터 제거** ([Store.c](/c-practice/Store.c) [L56-61](/c-practice/Store.c#L56) · [store.py](/python/store.py) [L59-63](/python/store.py#L59))
+**TAIL부터 제거** ([Store.c](/c-practice/src/Store.c) [L56-61](/c-practice/src/Store.c#L56) · [store.py](/python/store.py) [L59-63](/python/store.py#L59))
 
 ```c
     while (store->maxmemory > 0 && store->used_memory > store->maxmemory && store->lru.TAIL != NULL) {
@@ -430,7 +430,7 @@ C는 value가 int라 크기를 자릿수로 대신하고(-5 → 2), Python은 �
     }
 ```
 
-**C 확인 예시 (maxmemory 10)** ([store_test.c](/c-practice/store_test.c) [L101-107](/c-practice/store_test.c#L101))
+**C 확인 예시 (maxmemory 10)** ([store_test.c](/c-practice/src/store_test.c) [L101-107](/c-practice/src/store_test.c#L101))
 
 ```text
 store_set a 111   1 + 3 = 4   used=4    lru: HEAD -> [a] <- TAIL
@@ -447,11 +447,11 @@ store_test의 기대값(LRU `c a`, used 8, evicted 1)과 같습니다. 미션 8�
 > **Q7. SET 한 번에서 used_memory는 어떤 순서로 바뀌고, 왜 OOM 검사를 저장 전에 하나?**
 > 순서: 만료 정리 → new_memory 계산 → OOM 검사 → 기존 키면 prev_memory 계산 → hashmap_put·LRU 갱신 → `used_memory -= prev_memory; += new_memory` → evict_if_needed.
 > 엔트리 하나가 maxmemory보다 크면 다른 키를 다 지워도 들어갈 수 없으므로, 저장 전에 거부해야 기존 키와 덮어쓰려던 기존 값이 그대로 남습니다.
-> 기존 키는 옛 크기를 빼고 새 크기를 더해야 값이 짧아지거나 길어질 때 모두 맞습니다. ([Store.c](/c-practice/Store.c) [L108-146](/c-practice/Store.c#L108), [L113-115](/c-practice/Store.c#L113))
+> 기존 키는 옛 크기를 빼고 새 크기를 더해야 값이 짧아지거나 길어질 때 모두 맞습니다. ([Store.c](/c-practice/src/Store.c) [L108-146](/c-practice/src/Store.c#L108), [L113-115](/c-practice/src/Store.c#L113))
 
 > **Q8. 왜 TTL 만료로 지운 키는 evicted_keys에 세지 않나?**
 > evicted_keys는 메모리가 부족해서 원치 않게 지워진 키의 수를 보여 주는 지표입니다. 만료는 사용자가 정한 수명이 끝난 정상 삭제입니다.
-> 그래서 카운트는 evict_if_needed 안에만 있고, expire_if_needed는 delete_data만 부릅니다. ([Store.c](/c-practice/Store.c) [L59](/c-practice/Store.c#L59), [L85](/c-practice/Store.c#L85))
+> 그래서 카운트는 evict_if_needed 안에만 있고, expire_if_needed는 delete_data만 부릅니다. ([Store.c](/c-practice/src/Store.c) [L59](/c-practice/src/Store.c#L59), [L85](/c-practice/src/Store.c#L85))
 
 ### 헷갈리는 개념 비교
 
@@ -479,7 +479,7 @@ store_test의 기대값(LRU `c a`, used 8, evicted 1)과 같습니다. 미션 8�
 
 ## 6. 기능 정리 (부록)
 
-![명령 처리 흐름](/images/pipeline.svg)
+![명령 처리 흐름](/images/pipeline2.png)
 
 | 명령 | 하는 일 | 쓰는 자료구조 연산 (C 함수) |
 | --- | --- | --- |
@@ -554,14 +554,14 @@ python3 python/main.py
 
 | 보너스 | 파일 | 핵심 | 필수 자료구조와의 연결 |
 | --- | --- | --- | --- |
-| 1 동적 배열 | [DynamicArray.c](/c-practice/DynamicArray.c) · [dynamic_array.py](/python/dynamic_array.py) | 가득 차면 capacity 2배, remove는 뒤 원소를 당겨 순서 유지 O(n) | Python MinHeap 저장소로 사용. pop은 끝 칸 remove라 당길 원소가 없음 ([L75](/python/min_heap.py#L75)) |
+| 1 동적 배열 | [DynamicArray.c](/c-practice/src/DynamicArray.c) · [dynamic_array.py](/python/dynamic_array.py) | 가득 차면 capacity 2배, remove는 뒤 원소를 당겨 순서 유지 O(n) | Python MinHeap 저장소로 사용. pop은 끝 칸 remove라 당길 원소가 없음 ([L75](/python/min_heap.py#L75)) |
 | 2 스택/큐/덱 | [STACK_QUEUE_DEQUE.md](/docs/STACK_QUEUE_DEQUE.md) | LinkedList 양 끝 연산 = 덱, 한쪽만 쓰면 스택, 뒤로 넣고 앞에서 빼면 큐 | LRU는 덱 + 중간 이동(move_to_front) |
-| 3 이진 트리 | [BinaryTree.c](/c-practice/BinaryTree.c) · [binary_tree.py](/python/binary_tree.py) | 배열 i번의 자식 = 2i+1, 2i+2. 순회 4종 | 힙과 같은 인덱스 규칙. 레벨 순회 큐는 LinkedList ([L103-106](/c-practice/BinaryTree.c#L103)) |
-| 4 BST | [BST.c](/c-practice/BST.c) · [bst.py](/python/bst.py) | 왼쪽 < 노드 < 오른쪽. 자식 2개 삭제는 오른쪽 최솟값(후계자)으로 대체 | 중위 순회 = 정렬. 정렬된 값을 넣으면 한쪽으로 치우쳐 연결 리스트처럼 O(n) |
-| 5 Pub/Sub | [PubSub.c](/c-practice/PubSub.c) · [pubsub.py](/python/pubsub.py) | SUBSCRIBE는 채널 수, PUBLISH는 받은 구독자 수(1/0) | 구독 채널 = HashMap을 키 집합으로, 받은 메시지 = LinkedList 큐 |
+| 3 이진 트리 | [BinaryTree.c](/c-practice/src/BinaryTree.c) · [binary_tree.py](/python/binary_tree.py) | 배열 i번의 자식 = 2i+1, 2i+2. 순회 4종 | 힙과 같은 인덱스 규칙. 레벨 순회 큐는 LinkedList ([L103-106](/c-practice/src/BinaryTree.c#L103)) |
+| 4 BST | [BST.c](/c-practice/src/BST.c) · [bst.py](/python/bst.py) | 왼쪽 < 노드 < 오른쪽. 자식 2개 삭제는 오른쪽 최솟값(후계자)으로 대체 | 중위 순회 = 정렬. 정렬된 값을 넣으면 한쪽으로 치우쳐 연결 리스트처럼 O(n) |
+| 5 Pub/Sub | [PubSub.c](/c-practice/src/PubSub.c) · [pubsub.py](/python/pubsub.py) | SUBSCRIBE는 채널 수, PUBLISH는 받은 구독자 수(1/0) | 구독 채널 = HashMap을 키 집합으로, 받은 메시지 = LinkedList 큐 |
 
 > **Q9. Pub/Sub에서 중복 구독을 따로 검사하지 않아도 채널 수가 늘지 않는 이유는?**
-> hashmap_put은 이미 있는 키면 값만 바꾸고 count를 늘리지 않습니다. 그래서 `pubsub_subscribe`는 put 뒤에 `hashmap_size`만 돌려주면 됩니다. ([PubSub.c](/c-practice/PubSub.c) [L7-13](/c-practice/PubSub.c#L7))
+> hashmap_put은 이미 있는 키면 값만 바꾸고 count를 늘리지 않습니다. 그래서 `pubsub_subscribe`는 put 뒤에 `hashmap_size`만 돌려주면 됩니다. ([PubSub.c](/c-practice/src/PubSub.c) [L7-13](/c-practice/src/PubSub.c#L7))
 
 > **Q10. 실제 Redis Pub/Sub과 무엇이 다른가?**
 > 실제 Redis는 구독자와 발행자가 다른 클라이언트이고, 구독 중인 클라이언트는 일반 명령을 쓸 수 없습니다. 미션은 서버를 만들지 않으므로 REPL 하나가 구독자를 겸하고, 받은 메시지를 발행 결과 바로 뒤에 Redis 형식 3줄로 보여 줍니다. 메시지는 키가 아니라 used_memory·DBSIZE·KEYS에 들어가지 않습니다. ([main.py](/python/main.py) [L66-74](/python/main.py#L66))

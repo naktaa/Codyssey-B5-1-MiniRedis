@@ -53,7 +53,7 @@ Review:
 ### C-1 구현 정리·요청 검토와 C-2 설계 안내
 
 - 사용자 요청: 연결 리스트 마무리 가능 여부를 검토하고 괜찮으면 관련 변경을 커밋한 뒤 다음 작업으로 진행.
-- 검토 대상: [Linked_list.c](../../c-practice/Linked_list.c)의 Node, insert_front/insert_back/remove_front/remove_back/remove_node/move_to_front와 caeaf11 이후 diff. 기존 합의대로 임시 main과 NULL 입력 검사는 제외했습니다.
+- 검토 대상: [Linked_list.c](../../c-practice/src/Linked_list.c)의 Node, insert_front/insert_back/remove_front/remove_back/remove_node/move_to_front와 caeaf11 이후 diff. 기존 합의대로 임시 main과 NULL 입력 검사는 제외했습니다.
 - 정적 결과: 첫 삽입·양 끝·중간 노드의 연결, 마지막 노드 이동 시 TAIL 갱신, 삭제 시 한 번 해제·이동 시 미해제, 여섯 연산의 O(1) 처리를 확인했습니다. 삽입은 연결되지 않은 동적 할당 노드, 삭제·이동은 현재 리스트 소속의 유효 노드라는 전제입니다. 추가 오류는 발견하지 못했으며 PM은 소스를 수정하지 않았습니다.
 - Review Decision: **REQUIRED** — 사용자 요청한 커밋 전 마무리 정적 검토 완료. 같은 PM 세션에서 수행했으며 독립 에이전트 리뷰·실행 검증은 아닙니다.
 - 사용자 확인: 아직 실행 검증하지 않았다고 답했습니다. C-1은 구현·정적 검토 완료 / 사용자 검증 대기로 기록하고 단계 완료 확정·테스트 성공으로 처리하지 않았습니다. PM도 컴파일·실행·테스트하지 않았습니다.
@@ -71,7 +71,7 @@ Review:
 ### C-2 승인된 해시맵 학습 템플릿
 
 - 승인: 사용자가 문자열 키·정수 값, 항목/해시맵 구조체, 해시 함수와 필수 여섯 연산의 원형·설명·TODO만 제공하는 계획에 '그럼 한번 해줘'라고 승인했습니다. 함수 본문·정답 알고리즘·테스트 구현은 포함하지 않습니다.
-- 작업 전 [HashMap.c](../../c-practice/HashMap.c)는 미추적 파일로 include 두 줄과 비어 있는 main만 있었습니다. 제안한 별도 신규 파일 대신 이 파일의 기존 틀을 유지하고 Entry/HashMap 선언과 함수 원형·학습 주석을 추가했습니다. [Linked_list.c](../../c-practice/Linked_list.c)는 수정하지 않았습니다.
+- 작업 전 [HashMap.c](../../c-practice/src/HashMap.c)는 미추적 파일로 include 두 줄과 비어 있는 main만 있었습니다. 제안한 별도 신규 파일 대신 이 파일의 기존 틀을 유지하고 Entry/HashMap 선언과 함수 원형·학습 주석을 추가했습니다. [Linked_list.c](../../c-practice/src/Linked_list.c)는 수정하지 않았습니다.
 - 학습 선택: 버킷마다 첫 Entry 주소를 관리하고, C 표준 remove와 충돌을 피하기 위해 함수 이름에 hashmap_ 접두사를 사용했습니다. get은 성공 여부와 정수 값을 구분하며, keys는 C 실습용 전체 키 출력 원형입니다. 초기 버킷 수·키 소유권·생성/정리·해시 함수·확장 구현은 사용자에게 남겼습니다.
 - [README](../../README.md)·[STATUS](STATUS.md)에 템플릿 준비/사용자 구현 대기를 기록했습니다. 필수 해시맵 기능이나 Python 최종 요구가 완료된 것은 아닙니다.
 - Review Decision: **SKIP** — 선언·주석·진행 기록만 준비. 정적 확인만 수행하며 컴파일·실행·테스트·에이전트 위임·스테이징·커밋은 하지 않습니다.
@@ -96,7 +96,7 @@ Review:
 
 ### C-2 중간 진행 기록
 
-- 사용자 구현: [LinkedList.h](../../c-practice/LinkedList.h)·[LinkedList.c](../../c-practice/LinkedList.c) 분리, void* data와 리스트별 상태 도입. [HashMap.c](../../c-practice/HashMap.c)는 LinkedList* buckets와 키/값 Data를 사용합니다.
+- 사용자 구현: [LinkedList.h](../../c-practice/include/LinkedList.h)·[LinkedList.c](../../c-practice/src/LinkedList.c) 분리, void* data와 리스트별 상태 도입. [HashMap.c](../../c-practice/src/HashMap.c)는 LinkedList* buckets와 키/값 Data를 사용합니다.
 - 진행: 해시의 unsigned char·31배 누적, put의 버킷 순회·같은 키 값 갱신·신규 Data/키/Node 할당과 리스트 삽입을 작성했습니다. 최신 put은 비교 분기를 바로잡았고 strlen(key)+1 키 저장 공간도 추가했습니다. 구현 완료·실행 성공을 뜻하지 않습니다.
 - 우선 수정: 키 할당 실패 시 NewData 해제, NewNode 할당 실패 확인·기존 할당 정리, 신규 삽입 성공 시 count 증가, 고정 CAP 대신 실제 capacity 기반 버킷 계산. NewNode의 prev/next 설정은 insert_back과 중복되어 선택적으로 정리할 수 있습니다.
 - 남은 구현: 맵/버킷 초기화·전체 메모리 정리, get/remove/contains/keys/size, 로드 팩터 0.75 초과 시 버킷 2배 확장. 오래된 Entry 관련 주석도 실제 Data/LinkedList 구조와 맞춥니다.
@@ -113,7 +113,7 @@ Review:
 ### C-3 최소 힙 설계 결정
 
 - Decision:
-  1. 파일은 [MinHeap.h](../../c-practice/MinHeap.h)·[MinHeap.c](../../c-practice/MinHeap.c). LinkedList와 같은 이름 규칙이며 구조체 정의는 헤더에 둔다.
+  1. 파일은 [MinHeap.h](../../c-practice/include/MinHeap.h)·[MinHeap.c](../../c-practice/src/MinHeap.c). LinkedList와 같은 이름 규칙이며 구조체 정의는 헤더에 둔다.
   2. `expire_at`은 밀리초 단위 `long long`. C-3 테스트에서는 실제 시간 없이 숫자만 넣는다.
   3. key는 힙이 `strlen + 1`로 `malloc`해 복사·소유한다. `minheap_free`는 남은 항목의 key를 해제한다.
   4. 배열은 동적 확장하며 가득 차면 2배. `realloc` 결과는 임시 포인터로 받아 실패 시 원본을 보존한다.
